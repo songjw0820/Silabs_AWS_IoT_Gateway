@@ -73,6 +73,10 @@ FILES_${PN} = "${sbindir}/mosquitto \
                ${sysconfdir}/mosquitto \
                ${sysconfdir}/init.d \
                ${systemd_unitdir}/system/mosquitto.service \
+	       ${bindir}/mosquitto_pub \
+               ${bindir}/mosquitto_sub \
+               ${libdir}/libmosquitto.so.1 \
+               ${libdir}/libmosquittopp.so.1 \
 "
 
 CONFFILES_${PN} += "${sysconfdir}/mosquitto/mosquitto.conf"
