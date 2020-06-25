@@ -9,6 +9,7 @@ import { connect } from "react-redux";
 import { Navigation } from 'react-native-navigation';
 import { authSetUser, authLogout } from "../store/actions/rootActions";
 import App from "../../App";
+import Auth from '@aws-amplify/auth';
 
 class SideDrawer extends Component {
 
@@ -28,23 +29,45 @@ class SideDrawer extends Component {
         }
     }
 
-    logOut = async () => {
-        Navigation.setRoot({
-            root: {
-                component: {
-                    name: 'LoginScreen'
-                },
-            }
-        });
-        await this.props.onLogout();
-        this.setState({
-            signOutLoading: true,
-            imageUrl: '',
-            name: '',
-            email: ''
-        });
+//    logOut = async () => {
+//        Navigation.setRoot({
+//            root: {
+//                component: {
+//                    name: 'LoginScreen'
+//                },
+//            }
+//        });
+//        await this.props.onLogout();
+//        this.setState({
+//            signOutLoading: true,
+//            imageUrl: '',
+//            name: '',
+//            email: ''
+//        });
+//
+//    };
+ signOut = async () => {
+    await Auth.signOut()
+    AsyncStorage.removeItem('accessToken').then(()=> {
+       console.log('successfully logged out');
+     }).catch((error) => {
+          console.log('error in removing account', error);
+     })
 
-    };
+    this.setState({
+                signOutLoading: true,
+                imageUrl: '',
+               name: '',
+                email: ''
+           });
+    Navigation.setRoot({
+                root: {
+                    component: {
+                        name: 'LoginScreen'
+                    },
+                }
+            });
+  }
 
     componentDidMount() {
         AsyncStorage.multiGet(['userProfile', 'userEmail', 'userName'], (error, stores) => {
@@ -282,7 +305,7 @@ class SideDrawer extends Component {
                         </View>
                     </TouchableOpacity>
                     <View style={{ height: 2, backgroundColor: '#f3f3f3' }}></View>
-                    <TouchableOpacity onPress={() => this.logOut()}>
+                    <TouchableOpacity onPress={() => this.signOut()}>
                         <View style={styles.drawerItem}>
                             <Icon
                                 name={Platform.OS === "android" ? "md-log-out" : "ios-log-out"}

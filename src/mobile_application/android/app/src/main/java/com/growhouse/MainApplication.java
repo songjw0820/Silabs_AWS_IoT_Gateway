@@ -5,10 +5,6 @@ import android.content.Context;
 
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
-import com.reactnativecommunity.webview.RNCWebViewPackage;
-import com.polidea.reactnativeble.BlePackage;
-import com.masteratul.exceptionhandler.ReactNativeExceptionHandlerPackage;
-import com.oblador.vectoricons.VectorIconsPackage;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.soloader.SoLoader;
@@ -20,12 +16,15 @@ import com.reactnativenavigation.NavigationApplication;
 import com.reactnativenavigation.react.NavigationReactNativeHost;
 import com.reactnativenavigation.react.ReactGateway;
 
-import co.apptailor.googlesignin.RNGoogleSigninPackage;
 
 import com.avishayil.rnrestart.ReactNativeRestartPackage;
 import com.masteratul.exceptionhandler.ReactNativeExceptionHandlerPackage;
 import com.polidea.reactnativeble.BlePackage;
 import com.reactnativecommunity.webview.RNCWebViewPackage;
+import com.oblador.vectoricons.VectorIconsPackage;
+import co.apptailor.googlesignin.RNGoogleSigninPackage;
+import com.reactnativecommunity.netinfo.NetInfoPackage;
+import com.amazonaws.RNAWSCognitoPackage;
 
 
 public class MainApplication extends NavigationApplication {
@@ -55,7 +54,11 @@ public class MainApplication extends NavigationApplication {
                 new ReactNativeExceptionHandlerPackage(),
                 new BlePackage(),
                 new ReactNativeRestartPackage(),
-                new RNCWebViewPackage()
+                new RNCWebViewPackage(),
+                new NetInfoPackage(),
+                new RNAWSCognitoPackage()
+
+
         );
     }
 
