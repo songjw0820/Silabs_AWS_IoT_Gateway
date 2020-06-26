@@ -22,41 +22,7 @@ class Dashboard extends Component {
     return Constant.DEFAULT_NAVIGATOR_STYLE
   }
 
-  imageUri = {
-    'OK': require('../../assets/images/gray-plant.png'),//green-plant //baki
-    'Soil needs attention': require('../../assets/images/water-drop.png'),//water-drop,
-    'Need Sunlight': require('../../assets/images/yellow-plant.png'),//yellow-plant
-    'More Temperature': require('../../assets/images/red-plant.png'),//red-plant
-    'Need Sunlight@#$More Temperature': require('../../assets/images/RY-plant.png'), //RY-plant
-    'More Temperature@#$Need Sunlight': require('../../assets/images/RY-plant.png'), //RY-plant
-    'Soil needs attention@#$More Temperature': require('../../assets/images/RB-plant.png'), //RB-plant
-    'More Temperature@#$Soil needs attention': require('../../assets/images/RB-plant.png'), //RB-plant
-    'Soil needs attention@#$Need Sunlight': require('../../assets/images/BY-plant.png'), //BY-plant
-    'Need Sunlight@#$Soil needs attention': require('../../assets/images/BY-plant.png'), //BY-plant
-    'Soil needs attention@#$Need Sunlight@#$More Temperature': require('../../assets/images/RBY-plant.png'), //RBY-plant
-    'Need Sunlight@#$Soil needs attention@#$More Temperature': require('../../assets/images/RBY-plant.png'), //RBY-plant
-    'Soil needs attention@#$More Temperature@#$Need Sunlight': require('../../assets/images/RBY-plant.png'), //RBY-plant
-    'Need Sunlight@#$More Temperature@#$Soil needs attention': require('../../assets/images/RBY-plant.png'), //RBY-plant
-    'More Temperature@#$Need Sunlight@#$Soil needs attention': require('../../assets/images/RBY-plant.png'), //RBY-plant
-    'More Temperature@#$Soil needs attention@#$Need Sunlight': require('../../assets/images/RBY-plant.png'), //RBY-plant
-    'Battery needs attention': require('../../assets/images/battery-red.png'), //battery-red
-    'Temperature needs attention': require('../../assets/images/Thermometer-03.png'), //thermometer-03
-    'Battery needs attention@#$Temperature needs attention': require('../../assets/images/battery-thermo_BT-icon.png'), //battery-thermo_BT-icon.svg
-    'Temperature needs attention@#$Battery needs attention': require('../../assets/images/battery-thermo_BT-icon.png'), //battery-thermo_BT-icon.svg
-    'Soil needs attention@#$Temperature needs attention': require('../../assets/images/water-thermo_TW-icon.png'), //water-thermo_TW-icon.svg
-    'Temperature needs attention@#$Soil needs attention': require('../../assets/images/water-thermo_TW-icon.png'), //water-thermo_TW-icon.svg
-    'Soil needs attention@#$Battery needs attention': require('../../assets/images/battery-water_BW-icon.png'), //battery-water_BW-icon.svg
-    'Battery needs attention@#$Soil needs attention': require('../../assets/images/battery-water_BW-icon.png'), //battery-water_BW-icon.svg
-    'Latest device information is not available': require('../../assets/images/gray-plant.png'), //grey-plant
-    'Device is not available': require('../../assets/images/gray-plant.png'), // grey plant
-    'Soil needs attention@#$Battery needs attention@#$Temperature needs attention': require('../../assets/images/TWB-icon.png'),  // TWB-icon.svg
-    'Battery needs attention@#$Soil needs attention@#$Temperature needs attention': require('../../assets/images/TWB-icon.png'),  // TWB-icon.svg
-    'Soil needs attention@#$Temperature needs attention@#$Battery needs attention': require('../../assets/images/TWB-icon.png'),  // TWB-icon.svg
-    'Battery needs attention@#$Temperature needs attention@#$Soil needs attention': require('../../assets/images/TWB-icon.png'),  // TWB-icon.svg
-    'Temperature needs attention@#$Battery needs attention@#$Soil needs attention': require('../../assets/images/TWB-icon.png'),  // TWB-icon.svg
-    'Temperature needs attention@#$Soil needs attention@#$Battery needs attention': require('../../assets/images/TWB-icon.png')   // TWB-icon.svg
-  }
-
+  
   constructor(props) {
     super(props);
     Navigation.events().bindComponent(this);
@@ -70,8 +36,8 @@ class Dashboard extends Component {
   componentDidAppear() {
     AsyncStorage.getItem('accessToken').then((authToken) => {
       this.setState({ token: authToken });
-      this.props.onGetDashboardCount(authToken);
-      this.props.onGetDashboardAlerts(authToken);
+     // this.props.onGetDashboardCount(authToken);
+      //this.props.onGetDashboardAlerts(authToken);
 
     })
   }
@@ -88,147 +54,28 @@ class Dashboard extends Component {
     })
   }
 
-
-
-
-
-  formatStandardTime = (date) => {
-
-    let time = date.toLocaleTimeString();
-    time = time.split(':'); // convert to array
-
-    // fetch
-    var hours = Number(time[0]);
-    var minutes = Number(time[1]);
-    var seconds = Number(time[2]);
-    console.log('second', seconds, time);
-
-    // calculate
-    var timeValue;
-
-    if (hours > 0 && hours <= 12) {
-      timeValue = "" + hours;
-    } else if (hours > 12) {
-      timeValue = "" + (hours - 12);
-    } else if (hours == 0) {
-      timeValue = "12";
-    }
-    timeValue += (minutes < 10) ? ":0" + minutes : ":" + minutes;  // get minutes
-    timeValue += Platform.OS === 'ios' ? ':' + time[2] : (seconds < 10) ? ":0" + seconds : ":" + seconds;  // get seconds
-    timeValue += Platform.OS === 'ios' ? '' : (hours >= 12) ? " PM" : " AM";  // get AM/PM
-
-    return timeValue
-  }
-
-
-
   renderCount() {
-    if (this.props.dashboardCount.devices_count) {
-      return (
-        <View style={styles.listItem}>
-          <Text style={{ alignSelf: 'flex-start', color: '#fff' }}>Summary</Text>
-          <View style={{ height: 1, width: '100%', marginTop: 10, backgroundColor: '#000' }}>
-          </View>
-          <View horizontal style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 10, marginLeft: 10, marginRight: 10, width: '100%' }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-              <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, paddingLeft: 10, paddingRight: 10 }}>
-                <Text style={styles.detailDeviceName}>Facilities</Text>
-                <Text style={styles.detailDeviceCount}>{this.props.dashboardCount.facilities_count}</Text>
-              </View>
-              <View style={{ width: 2, height: 40, alignSelf: 'center', backgroundColor: Constant.GREY_TEXT_COLOR, marginLeft: 10 }} />
-            </View>
-            <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, paddingLeft: 10, paddingRight: 10 }}>
-              <Text style={styles.detailDeviceName}>Containers</Text>
-              <Text style={styles.detailDeviceCount}>{this.props.dashboardCount.containers_count}</Text>
-            </View>
-            <View style={{ width: 2, height: 40, alignSelf: 'center', backgroundColor: Constant.GREY_TEXT_COLOR, marginLeft: 10 }} />
-
-            <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, paddingLeft: 10, paddingRight: 10 }}>
-              <Text style={styles.detailDeviceName}>Grow Areas</Text>
-              <Text style={styles.detailDeviceCount}>{this.props.dashboardCount.grow_areas_count}</Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: "center", justifyContent: 'space-between', marginLeft: -10, }}>
-            <View style={{ flexDirection: 'column', alignItems: "center", }}>
-
-              <View style={{ flexDirection: 'column', alignItems: "center", marginTop: 15, backgroundColor: '#737373' }}>
-                <Text style={styles.detailDeviceCount}>{this.props.dashboardCount.devices_count.devicetype_count.light_nodes_count}</Text>
-                <Text style={{ color: '#fff', fontWeight: 'bold', paddingLeft: 10, paddingRight: 10, paddingTop: 10, paddingBottom: 5 }}>LED Nodes</Text>
-              </View>
-
-            </View>
-            <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10 }}>
-              <View style={{ flexDirection: 'column', alignItems: "center", marginTop: 15, backgroundColor: '#737373' }}>
-                <Text style={styles.detailDeviceCount}>{this.props.dashboardCount.devices_count.devicetype_count.soil_nodes_count}</Text>
-                <Text style={{ color: '#fff', fontWeight: 'bold', paddingLeft: 10, paddingRight: 10, paddingTop: 10, paddingBottom: 5 }}>Soil Nodes</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      )
-    } else {
       return (
         <View style={styles.listItem}>
           <ActivityIndicator size='large' />
         </View>
       )
-    }
-  }
-
-
-
-  renderAlerts() {
-    return this.props.dashboardAlerts.map((slide, index) => {
-      let alertName = slide.profileVirtualName + `[${slide.growSectionName}]`;
-      let properties = JSON.parse(slide.properties)
-      let message = slide.alertMessage.split('@#$');
-      let timeStamp = new Date(slide.timestamp).toLocaleDateString() + ' | ' + this.formatStandardTime(new Date(slide.timestamp));
-      console.log('messages --------', message);
-
-      return (
-        <View style={{
-          flex: 1, marginVertical: '2%', justifyContent: 'center', alighItems: 'center',
-        }}>
-          <Slide
-            gatewayName={slide.growAreaName}
-            alertName={alertName}
-            properties={properties}
-            uri={this.imageUri[slide.alertMessage]}
-            messages={message}
-            timeStamp={timeStamp}
-          />
-        </View>
-      );
-    })
-
-
+   // }
   }
 
   renderPage() {
-    console.log('calling', this.props.dashboardAlerts);
-
-    if (this.props.dashboardAlerts) {
-      return (
-        <View style={[styles.listContainer, { flex: 1 }]}>
-          {this.renderCount()}
-          <Swiper style={styles.wrapper} showsButtons={false} autoplay activeDotStyle={{ backgroundColor: Constant.PRIMARY_COLOR }}>
-            {this.renderAlerts()}
-          </Swiper>
-        </View>
-      )
-
-    } else {
+    
       return (
         <View style={styles.listItem}>
           <ActivityIndicator size='large' />
         </View>)
-    }
   }
+
   render() {
     return (
       <View style={[styles.container, { flex: 2 }]}>
         <View style={styles.greenBackgroundContainer} />
-        {this.renderPage()}
+        {/* {this.renderPage()} */}
       </View>
     );
   }
@@ -243,6 +90,7 @@ const styles = StyleSheet.create({
   },
   greenBackgroundContainer: {
     backgroundColor: Constant.PRIMARY_COLOR,
+    //backgroundColor: '#ff9900',
     width: '100%',
     height: '25%',
     position: 'absolute',
@@ -441,23 +289,4 @@ const styles = StyleSheet.create({
 
 });
 
-mapStatesToProps = state => {
-  return {
-    dashboardCount: state.dashboard.dashboardCount,
-    dashboardAlerts: state.dashboard.dashboardAlerts
-  }
-};
-
-mapDispatchToProps = dispatch => {
-
-
-  return {
-    onGetDashboardCount: (token) => dispatch(getDashboardCount(token)),
-    onGetDashboardAlerts: (token) => dispatch(getAlerts(token))
-
-  }
-};
-
-
-
-export default connect(mapStatesToProps, mapDispatchToProps)(Dashboard);
+export default Dashboard;

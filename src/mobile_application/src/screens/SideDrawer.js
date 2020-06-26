@@ -29,23 +29,7 @@ class SideDrawer extends Component {
         }
     }
 
-//    logOut = async () => {
-//        Navigation.setRoot({
-//            root: {
-//                component: {
-//                    name: 'LoginScreen'
-//                },
-//            }
-//        });
-//        await this.props.onLogout();
-//        this.setState({
-//            signOutLoading: true,
-//            imageUrl: '',
-//            name: '',
-//            email: ''
-//        });
-//
-//    };
+
  signOut = async () => {
     await Auth.signOut()
     AsyncStorage.removeItem('accessToken').then(()=> {
@@ -91,10 +75,10 @@ class SideDrawer extends Component {
                 <View
                     style={[styles.container, { width: Dimensions.get("window").width * 0.8 }]}>
                     <ImageBackground
-                        source={require('../../assets/images/bg.jpg')} style={{ width: '100%' }}>
+                        source={require('../../assets/images/logo.jpg')} style={{ width: '100%' }}>
                         <View style={{ padding: 15 }}>
                             <Image
-                                style={{ width: 70, height: 70, borderRadius: 35, marginTop: 15, marginBottom: 15 }}
+                                style={{ width: 50, height: 50, borderRadius: 35, marginTop: 0, marginBottom: 60 }}
                                 source={{ uri: this.state.imageUrl || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y' }}
                                 loadingIndicatorSource={require('../../assets/images/user_70.png')}
                             />
@@ -102,206 +86,57 @@ class SideDrawer extends Component {
                             <Text style={{ color: 'white' }}>{this.state.email}</Text>
                         </View>
                     </ImageBackground>
-                    <TouchableOpacity onPress={async () => {
-                        this.setState({
+                    <View style={{ height: 2, backgroundColor: '#f3f3f3' }}></View>
+                    <TouchableOpacity onPress={() => {
+                          this.setState({
                             isDashboardClicked: true,
-                            isFacilitiesClicked: false,
-                            isContainersClicked: false,
                             isGrowAreaClicked: false,
-                            isGrowSecionsClicked: false,
                             isDevicesClicked: false
-                        });
-                        Icon.getImageSource("ios-menu", 30).then((src) => {
-                            Navigation.setRoot({
-                                root: {
-                                    sideMenu: {
-                                        id: 'SideMenu',
-                                        left: {
-                                            icon: src,
-                                            component: {
-                                                id: 'sideDrawer',
-                                                name: 'SideDrawer',
-                                                options: {
-
-                                                    layout: {
-                                                        orientation: ['portrait']
-                                                    }
-                                                }
-
-                                            },
-                                            options: {
-                                                leftButtons: [
-                                                    {
-                                                        id: "sideDrawer",
-                                                        title: 'SideMenu',
-                                                        color: 'white'
-                                                    }
-                                                ],
-                                            }
-                                        },
-                                        center: {
-                                            stack: {
-                                                children: [{
-                                                    component: {
-                                                        name: "DashboardScreen",
-                                                        options: {
-                                                            topBar: {
-                                                                elevation: 0,
-                                                                drawBehind: false,
-                                                                background: {
-                                                                    color: Constant.NAVIGATION_BACK_COLOR,
-                                                                },
-                                                                title: {
-                                                                    text: 'Dashboard',
-                                                                    color: '#fff',
-                                                                },
-                                                                leftButtons: [
-                                                                    {
-                                                                        id: "sideDrawer",
-                                                                        icon: src,
-                                                                        title: 'SideMenu',
-                                                                        color: 'white'
-                                                                    }
-                                                                ]
-                                                            },
-                                                            layout: {
-                                                                orientation: ['portrait'] // An array of supported orientations
-                                                            },
-                                                        },
-                                                    },
-
-                                                }],
-                                            },
-                                        },
-                                    },
-                                    options: {
-                                        layout: {
-                                            orientation: ['portrait'],
-                                        },
-                                        popGesture: true,
-                                        leftButtons: [
-                                            {
-                                                id: "sideDrawer",
-                                                icon: src,
-                                                title: 'Menu',
-                                                color: 'white',
-                                            }
-                                        ]
-                                    }
-                                },
-                            });
-                        })
+                          });
+                          App(0);
                     }}>
                         <View style={styles.drawerItem}>
-
-                            <Image
-                                source={require('../../assets/images/dashboard_grey.png')}
-                                style={{ height: 30, width: 30, tintColor: this.state.isDashboardClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }} />
-                            <Text style={{ marginLeft: 10, color: this.state.isDashboardClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }}>Dashboard</Text>
-                        </View>
-                    </TouchableOpacity>
-                    <View style={{ height: 2, backgroundColor: '#f3f3f3' }}></View>
-                    <TouchableOpacity onPress={() => {
-                        this.setState({
-                            isDashboardClicked: false,
-                            isFacilitiesClicked: true,
-                            isContainersClicked: false,
-                            isGrowAreaClicked: false,
-                            isGrowSecionsClicked: false,
-                            isDevicesClicked: false
-                        });
-                        App(0);
-                    }}>
-                        <View style={styles.drawerItem}>
-                            <Image
-                                source={require('../../assets/images/facilities.png')}
-                                style={{ height: 30, width: 30, tintColor: this.state.isFacilitiesClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }}
+                        <Image
+                           source={ require('../../assets/images/dashboard_grey.png')}
+                           style={{ height: 30, width: 30, tintColor:this.state.isDashboardClicked? Constant.PRIMARY_COLOR : '#000000' }}
                             />
-                            <Text style={{ marginLeft: 10, color: this.state.isFacilitiesClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }}>Facilities</Text>
+                            <Text style= {{marginLeft: 10 , color: this.state.isDashboardClicked? Constant.PRIMARY_COLOR : '#000000'}}>Dashboard</Text>
                         </View>
                     </TouchableOpacity>
-                    <View style={{ height: 2, backgroundColor: '#f3f3f3' }}></View>
-                    <TouchableOpacity onPress={() => {
-                        this.setState({
-                            isDashboardClicked: false,
-                            isFacilitiesClicked: false,
-                            isContainersClicked: true,
-                            isGrowAreaClicked: false,
-                            isGrowSecionsClicked: false,
-                            isDevicesClicked: false
-                        });
-                        App(1);
 
-                    }}>
-                        <View style={styles.drawerItem}>
-                            <Image
-                                source={require('../../assets/images/containers.png')}
-                                style={{ height: 30, width: 30, tintColor: this.state.isContainersClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }}
-                            />
-                            <Text style={{ marginLeft: 10, color: this.state.isContainersClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }} >Containers</Text>
-                        </View>
-                    </TouchableOpacity>
                     <View style={{ height: 2, backgroundColor: '#f3f3f3' }}></View>
                     <TouchableOpacity onPress={() => {
                         this.setState({
                             isDashboardClicked: false,
-                            isFacilitiesClicked: false,
-                            isContainersClicked: false,
                             isGrowAreaClicked: true,
-                            isGrowSecionsClicked: false,
                             isDevicesClicked: false
-                        });
-                        App(2);
-
+                          });
+                          App(1);
                     }}>
                         <View style={styles.drawerItem}>
                             <Image
                                 source={require('../../assets/images/growarea.png')}
-                                style={{ height: 30, width: 30, tintColor: this.state.isGrowAreaClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }}
+                                style={{ height: 30, width: 30, tintColor: this.state.isGrowAreaClicked ? Constant.PRIMARY_COLOR : '#000000' }}
                             />
-                            <Text style={{ marginLeft: 10, color: this.state.isGrowAreaClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }} >Grow Areas</Text>
-                        </View>
-                    </TouchableOpacity>
-                    <View style={{ height: 2, backgroundColor: '#f3f3f3' }}></View>
-                    <TouchableOpacity onPress={() => {
-                        this.setState({
-                            isDashboardClicked: false,
-                            isFacilitiesClicked: false,
-                            isContainersClicked: false,
-                            isGrowAreaClicked: false,
-                            isGrowSecionsClicked: true,
-                            isDevicesClicked: false
-                        });
-                        App(3);
-
-                    }}>
-                        <View style={styles.drawerItem}>
-                            <Image
-                                source={require('../../assets/images/growsection.png')}
-                                style={{ height: 30, width: 30, tintColor: this.state.isGrowSecionsClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }}
-                            />
-                            <Text style={{ marginLeft: 10, color: this.state.isGrowSecionsClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }} >Grow Sections</Text>
+                            <Text style={{ marginLeft: 10, color: this.state.isGrowAreaClicked? Constant.PRIMARY_COLOR : '#000000' }} >Gateway</Text>
                         </View>
                     </TouchableOpacity>
                     <View style={{ height: 2, backgroundColor: '#f3f3f3', }}></View>
                     <TouchableOpacity onPress={() => {
                         this.setState({
                             isDashboardClicked: false,
-                            isFacilitiesClicked: false,
-                            isContainersClicked: false,
                             isGrowAreaClicked: false,
-                            isGrowSecionsClicked: false,
                             isDevicesClicked: true
-                        });
-
-                        App(4);
+                            
+                          });
+                          App(2);
                     }}>
                         <View style={[styles.drawerItem, { alignItems: 'center' }]}>
                             <Image
                                 source={require('../../assets/images/device_72.png')}
-                                style={{ height: 30, width: 30, tintColor: this.state.isDevicesClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }}
+                                style={{ height: 30, width: 30, tintColor: this.state.isDevicesClicked ? Constant.PRIMARY_COLOR : '#000000' }}
                             />
-                            <Text style={{ marginLeft: 10, color: this.state.isDevicesClicked ? Constant.PRIMARY_COLOR : Constant.GREY_TEXT_COLOR }} >Devices</Text>
+                            <Text style={{ marginLeft: 10,  color: this.state.isDevicesClicked? Constant.PRIMARY_COLOR : '#000000'}} >Sensors</Text>
                         </View>
                     </TouchableOpacity>
                     <View style={{ height: 2, backgroundColor: '#f3f3f3' }}></View>
@@ -310,10 +145,10 @@ class SideDrawer extends Component {
                             <Icon
                                 name={Platform.OS === "android" ? "md-log-out" : "ios-log-out"}
                                 size={30}
-                                color={Constant.GREY_TEXT_COLOR}
+                                color={'#000000'}
                                 style={{ height: 30, width: 30 }}
                             />
-                            <Text style={{ marginLeft: 10, color: Constant.GREY_TEXT_COLOR }} >Sign Out</Text>
+                            <Text style={{ marginLeft: 10, color: '#000000' }} >Sign Out</Text>
                         </View>
                     </TouchableOpacity>
                     <View style={{ height: 2, backgroundColor: '#f3f3f3' }}></View>

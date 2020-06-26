@@ -2,7 +2,8 @@ import { bleDebug } from '../app.json';
 import { Platform } from 'react-native';
 
 
-export const PRIMARY_COLOR = '#acd373'
+//export const PRIMARY_COLOR = '#acd373'
+export const PRIMARY_COLOR = '#ff9900'
 export const LIGHT_GREY_COLOR = '#ebebeb'
 export const WHITE_BACKGROUND_COLOR = '#F5FCFF'
 export const WHITE_TEXT_COLOR = '#FFFFFF'

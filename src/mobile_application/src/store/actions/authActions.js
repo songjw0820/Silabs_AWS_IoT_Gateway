@@ -1,9 +1,9 @@
 import { AsyncStorage } from "react-native";
 import { GoogleSignin, statusCodes } from 'react-native-google-signin';
 import { AUTH_SET_USER, AUTH_REMOVE_USER, OCCURED401, RESET401 } from "./actionTypes";
-import { disconnectBleinGrowarea } from '../../screens/GrowAreasIOS';
+//import { disconnectBleinGrowarea } from '../../screens/GrowAreasIOS';
 import { disconnectBleinDevice } from '../../screens/Devices';
-import bleReducer from '../reducers/bleReducer';
+//import bleReducer from '../reducers/bleReducer';
 import { uiStopLoading, uiStartLoading, } from "./rootActions";
 
 
@@ -42,7 +42,7 @@ export const authSetUser = (user, appleKey) => {
 };
 
 export const authLogout = (inBackground) => {
-  console.log("Logout called", bleReducer.bleManager);
+ // console.log("Logout called", bleReducer.bleManager);
   return (dispatch) => {
 
     dispatch(uiStartLoading())
@@ -51,7 +51,7 @@ export const authLogout = (inBackground) => {
         if (!inBackground) {
           console.log('start disconnecting');
           disconnectBleinDevice();
-          disconnectBleinGrowarea();
+         // disconnectBleinGrowarea();
           console.log('end disconnecting');
         }
         dispatch(sessionEstablished())
