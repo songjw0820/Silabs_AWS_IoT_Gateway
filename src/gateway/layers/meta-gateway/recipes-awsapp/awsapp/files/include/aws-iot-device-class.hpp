@@ -33,7 +33,7 @@
 #include "macrologger.h"
 
 #ifndef CONFIG_FILE
-#define CONFIG_FILE	"config.json"
+#define CONFIG_FILE	"/opt/awsapp/config.json"
 #endif
 
 #define AWS_SDK_DEBUG    1

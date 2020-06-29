@@ -13,19 +13,22 @@
 
    
 
-2. Clone source code
+2. Clone source code.
 
    `$ git clone https://git.einfochips.com:8080/a/efr32-gateway`
 
    
 
-3. Go to the root directory and setup the environment
+3. Go to the root directory and run the build script.
 
    `$ cd efr32-gateway`
-   `$ MACHINE=dragonboard-410c DISTRO=rpb source ./setup-environment`
+   `$ ./build-image.sh`
 
    
 
-4. Build the image.
+4. Image artifacts will be located at below directory.
 
-   `$ bitbake rpb-console-image`
+   `$ cd build-rpb/Image_artifacts`
+    Image files :
+	- boot-dragonboard-410c.img
+	- rpb-console-image-dragonboard-410c.ext4.gz

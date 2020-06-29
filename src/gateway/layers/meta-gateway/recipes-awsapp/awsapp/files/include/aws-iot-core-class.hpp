@@ -30,14 +30,12 @@
 #include <mosquitto.h>
 #include "macrologger.h"
 
-#define POLICY_NAME   "growhouse-policy"
-#define POLICY_STRING "{ \"Version\": \"2012-10-17\",\"Statement\": [{ \"Effect\": \"Allow\", \"Action\": \"iot:*\", \"Resource\": \"*\"}]}"
 
 #define THING_TYPE_GATEWAY "gateway"
 #define THING_TYPE_DEVICE  "endDevice"
 #define THING_TYPE_SENSOR  "sensor"
-#define PATH_TO_CERTS      "certs/"
-#define CONFIG_FILE        "./config.json"
+#define PATH_TO_CERTS      "/opt/awsapp/certs/"
+#define CONFIG_FILE        "/opt/awsapp/config.json"
 
 //#define CREATE_THING_ENDPOINT "http://localhost:8090/post"
 //#define CREATE_THING_ENDPOINT "http://localhost:8090/postsensors"
