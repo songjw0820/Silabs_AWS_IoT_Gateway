@@ -25,7 +25,9 @@ class SideDrawer extends Component {
             isContainersClicked: false,
             isGrowAreaClicked: false,
             isGrowSecionsClicked: false,
-            isDevicesClicked: false
+            isDevicesClicked: false,
+            isDataPublishClicked:false
+
         }
     }
 
@@ -139,6 +141,25 @@ class SideDrawer extends Component {
                             <Text style={{ marginLeft: 10,  color: this.state.isDevicesClicked? Constant.PRIMARY_COLOR : '#000000'}} >Sensors</Text>
                         </View>
                     </TouchableOpacity>
+                    <View style={{ height: 2, backgroundColor: '#f3f3f3', }}></View>
+                    <TouchableOpacity onPress={() => {
+                          this.setState({
+                            isDashboardClicked: false,
+                            isGrowAreaClicked: false,
+                            isDevicesClicked: false,
+                            isDataPublishClicked:true
+                          });
+                          App(3);
+                    }}>
+                        <View style={[styles.drawerItem, { alignItems:'center'}]}>
+                        <Image
+                           source={ require('../../assets/images/growsection.png')}
+                           style={{ height: 30, width: 30, tintColor:this.state.isDataPublishClicked? Constant.PRIMARY_COLOR : '#000000' }}
+                            />
+                            <Text style={{ marginLeft: 10,  color: this.state.isDataPublishClicked? Constant.PRIMARY_COLOR : '#000000' }} >Publish</Text>
+                        </View>
+                    </TouchableOpacity>
+
                     <View style={{ height: 2, backgroundColor: '#f3f3f3' }}></View>
                     <TouchableOpacity onPress={() => this.signOut()}>
                         <View style={styles.drawerItem}>

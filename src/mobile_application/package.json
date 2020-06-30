@@ -10,6 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@aws-amplify/pubsub": "^3.0.18",
     "@aws-amplify/ui-react": "^0.2.9",
     "@pontusab/react-native-apple-authentication": "^1.0.6",
     "@react-native-community/netinfo": "^5.9.3",
