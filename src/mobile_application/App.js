@@ -3,6 +3,7 @@ import GrowAreasScreen from './src/screens/GrowAreas';
 import DevicesScreen from './src/screens/Devices';
 import LoginScreen from './src/screens/Login';
 import SideDrawer from './src/screens/SideDrawer';
+import PublishScreen from './src/screens/PublishData';
 import { AsyncStorage, Alert } from 'react-native';
 import { Navigation } from 'react-native-navigation';
 import * as Constant from './src/Constant';
@@ -31,6 +32,8 @@ Navigation.registerComponentWithRedux('LoginScreen', () => LoginScreen, Provider
 Navigation.registerComponentWithRedux('SideDrawer', () => SideDrawer, Provider, store);
 
 Navigation.registerComponentWithRedux('DashboardScreen', () => Dashboard, Provider, store);
+
+Navigation.registerComponentWithRedux('PublishScreen', () => PublishScreen, Provider, store);
 
 
 const forceAppQuit = false;
@@ -236,6 +239,52 @@ const startTABBasedNavigation = (pageIndex, iconSrc) => {
                         topBar: {
                           title: {
                             text: 'My Sensors',
+                          },
+                          leftButtons: [
+                            {
+                              id: "sideDrawer",
+                              icon: iconSrc,
+                              title: 'Menu',
+                              color: 'white'
+                            }
+                          ]
+                        },
+                        sideMenu: {
+                          left: {
+                            visible: false,
+                            enabled: Platform.OS === 'android',
+                          }
+
+                        }
+                      },
+
+                    },
+
+                  }
+                  ]
+                }
+              },
+              {
+                stack: {
+                  id: 'PUBLISH',
+                  children: [{
+                    component: {
+                      name: 'PublishScreen',
+                      options: {
+                        bottomTab: {
+                          text: 'Publish Data',
+                          icon: require('./assets/images/growsection.png'),
+                          //iconColor: Constant.TABBAR_BUTTON_COLOR,
+                          iconColor:'#000000',
+                          selectedIconColor: Constant.TABBAR_BUTTON_SELECTED_COLOR,
+                          //textColor: Constant.TABBAR_BUTTON_COLOR,
+                          textColor:'#000000',
+                          selectedTextColor: Constant.TABBAR_BUTTON_SELECTED_COLOR,
+                        },
+                        popGesture: true,
+                        topBar: {
+                          title: {
+                            text: 'Publish data',
                           },
                           leftButtons: [
                             {
