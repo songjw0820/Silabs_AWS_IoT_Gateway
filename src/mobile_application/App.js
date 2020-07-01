@@ -141,7 +141,7 @@ const startTABBasedNavigation = (pageIndex, iconSrc) => {
                       name: 'DashboardScreen',
                       options: {
                         bottomTab: {
-                          text: 'Dashboards',
+                          text: 'Dashboard',
                           icon: require('./assets/images/dashboard_grey.png'),
                           iconColor:'#000000',
                           selectedIconColor: Constant.TABBAR_BUTTON_SELECTED_COLOR,
