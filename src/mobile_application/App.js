@@ -15,6 +15,8 @@ import RNRestart from 'react-native-restart'; // Import package from node module
 import Dashboard from './src/screens/Dashboard';
 import { setJSExceptionHandler, setNativeExceptionHandler } from 'react-native-exception-handler';
 import { Platform } from 'react-native';
+import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+
 
 let tabCount = 0;
 let position = false;
@@ -152,6 +154,7 @@ const startTABBasedNavigation = (pageIndex, iconSrc) => {
                         topBar: {
                           title: {
                             text: 'Dashboard',
+                            fontSize : RFPercentage(1.9),
                           },
                           leftButtons: [
                             {
@@ -195,6 +198,7 @@ const startTABBasedNavigation = (pageIndex, iconSrc) => {
                         topBar: {
                           title: {
                             text: 'My Gateways',
+                            fontSize : RFPercentage(1.9),
                           },
                           leftButtons: [
                             {
@@ -239,6 +243,7 @@ const startTABBasedNavigation = (pageIndex, iconSrc) => {
                         topBar: {
                           title: {
                             text: 'My Sensors',
+                            fontSize : RFPercentage(1.9),
                           },
                           leftButtons: [
                             {
@@ -285,6 +290,7 @@ const startTABBasedNavigation = (pageIndex, iconSrc) => {
                         topBar: {
                           title: {
                             text: 'Publish data',
+                            fontSize : RFPercentage(1.9),
                           },
                           leftButtons: [
                             {

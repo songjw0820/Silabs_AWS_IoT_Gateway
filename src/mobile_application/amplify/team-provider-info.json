@@ -1,15 +1,15 @@
 {
     "dev": {
         "awscloudformation": {
-            "AuthRoleName": "amplify-mobileapplicationcod-dev-233647-authRole",
-            "UnauthRoleArn": "arn:aws:iam::226538054008:role/amplify-mobileapplicationcod-dev-233647-unauthRole",
-            "AuthRoleArn": "arn:aws:iam::226538054008:role/amplify-mobileapplicationcod-dev-233647-authRole",
-            "Region": "ap-southeast-1",
-            "DeploymentBucketName": "amplify-mobileapplicationcod-dev-233647-deployment",
-            "UnauthRoleName": "amplify-mobileapplicationcod-dev-233647-unauthRole",
-            "StackName": "amplify-mobileapplicationcod-dev-233647",
-            "StackId": "arn:aws:cloudformation:ap-southeast-1:226538054008:stack/amplify-mobileapplicationcod-dev-233647/7b259280-b645-11ea-9c30-02b1023f6966",
-            "AmplifyAppId": "d3doy2esagfpjn"
+            "AuthRoleName": "amplify-mobileapplicationcod-dev-202552-authRole",
+            "UnauthRoleArn": "arn:aws:iam::454143665149:role/amplify-mobileapplicationcod-dev-202552-unauthRole",
+            "AuthRoleArn": "arn:aws:iam::454143665149:role/amplify-mobileapplicationcod-dev-202552-authRole",
+            "Region": "us-east-2",
+            "DeploymentBucketName": "amplify-mobileapplicationcod-dev-202552-deployment",
+            "UnauthRoleName": "amplify-mobileapplicationcod-dev-202552-unauthRole",
+            "StackName": "amplify-mobileapplicationcod-dev-202552",
+            "StackId": "arn:aws:cloudformation:us-east-2:454143665149:stack/amplify-mobileapplicationcod-dev-202552/f7de8ea0-c061-11ea-87f3-02f6456406e2",
+            "AmplifyAppId": "d3qsbnahfaf9ro"
         },
         "categories": {
             "auth": {

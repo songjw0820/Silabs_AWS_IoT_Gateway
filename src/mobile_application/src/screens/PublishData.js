@@ -1,11 +1,14 @@
 import React, { Component } from 'react';
 import {
   RefreshControl, StyleSheet, Text, View, TextInput,FlatList, ActivityIndicator, ScrollView,
-  TouchableOpacity, Modal, Image, PermissionsAndroid, Alert, Platform, Button, Picker, AsyncStorage
+  TouchableOpacity, Modal, Image, PermissionsAndroid, Alert, Platform, Button, Picker, AsyncStorage,Dimensions
 } from 'react-native';
 import * as Constant from '../Constant';
 import Amplify, { PubSub } from 'aws-amplify';
 import { AWSIoTProvider } from '@aws-amplify/pubsub/lib/Providers';
+import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+
+const {width,height} = Dimensions.get('window');
 
 
 Amplify.configure({
@@ -55,9 +58,8 @@ publishData = (payload) => {
  }
   render() {
     return (
-      <View style={[styles.container, { flex: 2 }]}>
+      <View style={[styles.container, { flex: 1 }]}>
         <View  style={styles.greenBackgroundContainer}/>
-        {/* {this.renderPage()} */}
         <View>
           <Text style={styles.inputText}>Enter Sensor Data into JSON format:</Text>
            <TextInput style = {styles.input}
@@ -82,30 +84,31 @@ publishData = (payload) => {
 const styles = StyleSheet.create({
   SubmitButtonStyle: {
  
-    marginTop:10,
-    paddingTop:10,
-    paddingBottom:15,
-    marginLeft:90,
-    marginRight:70,
+    marginTop:height * 0.02,
+    paddingTop: height * 0.02,
+    paddingBottom:height * 0.02,
+    marginLeft:height * 0.08,
+    marginRight: height * 0.08,
     backgroundColor:'#008CBA',
-    borderRadius:10,
+    borderRadius:20,
     borderWidth: 1,
-    borderColor: '#fff'
+    borderColor: '#fff',
   },
   input: {
-    margin: 15,
-    marginTop:30,
-    height: 40,
+    margin: height * 0.03,
+    marginTop:height * 0.02,
+    height: height * 0.06,
     borderColor: '#7a42f4',
     backgroundColor: '#FFFFFF',
     borderWidth: 1
  },
  inputText: {
-  marginTop:150,
-  fontSize: 14,
+  marginTop: height * 0.3,
+  fontSize: RFPercentage(2.5),
   color: "#000000",
   fontWeight: "bold",
-  textAlign: 'center'
+  textAlign: 'center',
+
 },
   button: {
     alignItems: "center",
@@ -155,7 +158,7 @@ const styles = StyleSheet.create({
     backgroundColor: Constant.DARK_GREY_COLOR
   },
   buttonText: {
-    fontSize: 12,
+    fontSize: RFPercentage(2.5),
     color: Constant.WHITE_TEXT_COLOR,
     fontWeight: "bold",
     textAlign: 'center'

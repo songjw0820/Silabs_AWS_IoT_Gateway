@@ -33,6 +33,7 @@
     "react-native-navigation": "^4.0.4",
     "react-native-picker-dropdown": "^0.1.2",
     "react-native-popup-menu": "^0.14.0",
+    "react-native-responsive-fontsize": "^0.4.3",
     "react-native-responsive-linechart": "^1.4.8",
     "react-native-restart": "0.0.13",
     "react-native-svg": "^8.0.8",
