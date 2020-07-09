@@ -36,9 +36,6 @@ class Dashboard extends Component {
   componentDidAppear() {
     AsyncStorage.getItem('accessToken').then((authToken) => {
       this.setState({ token: authToken });
-     // this.props.onGetDashboardCount(authToken);
-      //this.props.onGetDashboardAlerts(authToken);
-
     })
   }
 
