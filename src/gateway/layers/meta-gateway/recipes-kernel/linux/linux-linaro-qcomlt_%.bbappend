@@ -7,6 +7,8 @@ SRC_URI += "\
 
 KERNEL_CONFIG_FRAGMENTS_append = " ${WORKDIR}/linux-kernel-aws-greengrass.cfg "
 
+KERNEL_MODULE_AUTOLOAD += "g_serial"
+
 #SRC_URI += "\
 #        file://0002-Gateway-DB410C-Added-support-of-CYUSB3610-chip.patch \
 #        file://0003-Gateway-DB410C-Support-for-Factory-reset-gpio.patch \

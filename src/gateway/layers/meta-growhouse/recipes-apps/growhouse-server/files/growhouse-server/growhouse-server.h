@@ -241,6 +241,8 @@ int deviceStateControl(struct mosquitto *mosq, const struct mosquitto_message *m
 int bleShuttingDownCallback(struct mosquitto *mosq, const struct mosquitto_message *message);
 int seleneCommandHandler(struct mosquitto *mosq , const struct mosquitto_message *message);
 int deviceUpdateHandler(struct mosquitto *mosq , const struct mosquitto_message *message);
+int registerDeviceHandler(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
+int registerDeviceResponseHandler(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
 void updateDeviceStatus(char * eui64, struct mosquitto * mosq);
 void printProvisionedDeviceList();
 void startDeviceMonitor();

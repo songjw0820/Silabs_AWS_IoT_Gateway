@@ -59,6 +59,8 @@
 #define UUID_DEVICE_DISCOVER_COMMAND	0x3A36
 #define UUID_DEVICE_DISCOVERED_LIST	0x3A37
 #define UUID_DEVICE_CONNECTIVITY	0x3A38
+#define UUID_DEVICE_REGISTRATION	0x3A39 // For EFR32
+
 #define ATT_CID 4
 #define LE_LINK 0x80
 
@@ -77,11 +79,13 @@
 #define COLOR_BOLDWHITE	"\x1B[1;37m"
 
 #define MQTT_PUB_DISCOVER_COMMAND       	"ble/gw/discoverCommand"
+#define MQTT_PUB_REGISTER_COMMAND       	"ble/gw/registerCommand" // For EFR32
 #define MQTT_PUB_PROVISIONED_DEVICE     	"ble/gw/provisionedDevice"
 #define MQTT_PUB_BLE_SHUTTING_DOWN		"ble/gw/shuttingDown"
 #define MQTT_SUB_DISCOVERED_DEVICE      	"gw/ble/discoveredDevice"
 #define MQTT_SUB_GATEWAY_CONNECT_RESPONSE	"gw/ble/gatewayConnectivity"
 #define MQTT_SUB_DEVICE_CONNECT_RESPONSE	"gw/ble/deviceConnectivity"
+#define MQTT_SUB_REGISTRATION_RESPONSE		"gw/ble/registerResponse" // For EFR32
 #define MQTT_SUB_GATEWAY_DISCONNECT		"gw/ble/gatewayDisconnect"
 
 #define BEGIN_BLE_DATA				"---BEGIN BLE DATA---"
@@ -211,6 +215,7 @@ struct server {
 	uint16_t device_discover_handle;
 	uint16_t device_list_handle;
 	uint16_t device_connectivity_handle;
+	uint16_t device_register_handle;
 
 	/* mosquitto specific */
 	struct mosquitto *mosq;
@@ -480,6 +485,81 @@ static void device_discover_write_cb(struct gatt_db_attribute *attrib,
 	pthread_mutex_unlock(&rssi_lock);
 }
 
+static void device_register_write_cb(struct gatt_db_attribute *attrib,
+		unsigned int id, uint16_t offset,
+		const uint8_t *value, size_t len,
+		uint8_t opcode, struct bt_att *att,
+		void *user_data)
+{
+	uint8_t ecode = 0;
+	struct server * server = user_data;
+	int status = MOSQ_ERR_INVAL;
+	logBtGattInfo ("Device discover command callback\n");
+
+	pthread_mutex_lock(&rssi_lock);
+	if (value) {
+
+		logBtGattInfo ("Received data len %lu :: %s\n", len, value);
+		if (!strncmp((char *)value, BEGIN_BLE_DATA, strlen((char *)BEGIN_BLE_DATA))) {
+			logBtGattInfo ("%s\n", BEGIN_BLE_DATA);
+			if (server->msg_buf) {
+				logBtGattInfo ("Already memory allocated... Free memory\n");
+				free(server->msg_buf);
+				server->msg_buf = NULL;
+			}
+			server->msg_buf = (char *)calloc(CMD_CHUNK_SIZE, sizeof(char));
+			if ( server->msg_buf == NULL ) {
+				logBtGattErr ("failed to allocate memory\n");
+				gatt_db_attribute_write_result(attrib, id, BLE_WRITE_ERROR);
+				pthread_mutex_unlock(&rssi_lock);
+				return;
+			}
+			server->msg_len = CMD_CHUNK_SIZE;
+			gatt_db_attribute_write_result(attrib, id, ecode);
+			pthread_mutex_unlock(&rssi_lock);
+			return;
+
+		} else if (!strncmp((char *)value, END_BLE_DATA, strlen((char *)END_BLE_DATA))) {
+			logBtGattInfo ("%s\n", END_BLE_DATA);
+
+			/* Publish to growhouse-server*/
+			status = mosquitto_publish(server->mosq, NULL, MQTT_PUB_REGISTER_COMMAND, strlen(server->msg_buf), server->msg_buf, 1, false);
+			if ( status != MOSQ_ERR_SUCCESS){
+				logBtGattErr ("could not publish to topic:%s err:%d", MQTT_PUB_REGISTER_COMMAND, status);
+				ecode = BLE_WRITE_ERROR;
+			} else {
+				logBtGattInfo ("Successfully publish Device discover command : \"%s\" on topic %s\n", server->msg_buf, MQTT_PUB_REGISTER_COMMAND);
+			}
+			free(server->msg_buf);
+			server->msg_buf = NULL;
+			gatt_db_attribute_write_result(attrib, id, ecode);
+			pthread_mutex_unlock(&rssi_lock);
+			return;
+
+		} else if (server->msg_buf) {
+			if (server->msg_len <= (strlen(server->msg_buf) + len)) {
+				server->msg_buf = (char *)realloc(server->msg_buf, server->msg_len + CMD_CHUNK_SIZE);
+				if ( server->msg_buf == NULL ) {
+					logBtGattErr ("failed to allocate memory\n");
+					gatt_db_attribute_write_result(attrib, id, BLE_WRITE_ERROR);
+					pthread_mutex_unlock(&rssi_lock);
+					return;
+				}
+				memset ( server->msg_buf + strlen (server->msg_buf) , 0x0, CMD_CHUNK_SIZE);
+				server->msg_len += CMD_CHUNK_SIZE;
+			}
+			strncpy( (server->msg_buf + strlen(server->msg_buf)), (const char *)value, len);
+			gatt_db_attribute_write_result(attrib, id, ecode);
+		}
+	} else {
+		logBtGattErr ("Invalid pointer\n");
+		gatt_db_attribute_write_result(attrib, id, BLE_WRITE_ERROR);
+	}
+	pthread_mutex_unlock(&rssi_lock);
+}
+
+
+
 /* notifyMessageCallback()
  *
  * \brief : this callback function runs after successfully notify
@@ -659,6 +739,80 @@ static void notifyDiscoveredDevices(void * obj, const struct mosquitto_message *
 	}
 	pthread_mutex_unlock(&rssi_lock);
 }
+
+static void notifyRegisteredDevices(void * obj, const struct mosquitto_message *message)
+{
+	bool status = false;
+	int offset = 0;
+	int len = MAX_BLE_DATA_LEN;
+	struct server * server = obj;
+
+	logBtGattInfo ("Notify registered devices callback\n");
+
+	if (message == NULL) {
+		logBtGattErr ("Invalid Pointer\n");
+		return;
+	}
+
+	pthread_mutex_lock(&rssi_lock);
+	if ( server != NULL) {
+		pthreadMutexTimedLock();
+		usleep(100000);
+		status = bt_gatt_server_send_indication(server->gatt,
+				server->device_register_handle,
+				(const uint8_t *)BEGIN_BLE_DATA,strlen(BEGIN_BLE_DATA),notifyMessageCallback, NULL, NULL);
+
+		if (!status) {
+			logBtGattErr ("Failed to notify \"%s\"\n", BEGIN_BLE_DATA);
+			pthread_mutex_unlock(&rssi_lock);
+			pthread_mutex_unlock(&lock);
+			return;
+		}
+		logBtGattInfo ("Sucessfully notify \"%s\"",BEGIN_BLE_DATA);
+
+		do {
+			pthreadMutexTimedLock();
+			usleep(100000);
+
+			if ( (message->payloadlen - offset) < MAX_BLE_DATA_LEN)
+				len = message->payloadlen - offset;
+
+			status = bt_gatt_server_send_indication(server->gatt,
+					server->device_register_handle,
+					message->payload + offset,len,notifyMessageCallback, NULL, NULL);
+			if (status) {
+				logBtGattInfo ("Sucessfully notify \"%s\" of len == %d\n", (char *)message->payload + offset, len);
+			} else {
+				logBtGattErr ("Failed to  notify \"%s\" of len == %d\n", (char *)message->payload + offset, len);
+				pthread_mutex_unlock(&rssi_lock);
+				pthread_mutex_unlock(&lock);
+				return;
+			}
+
+			offset += len;
+		}while( offset < message->payloadlen);
+
+		pthreadMutexTimedLock();
+		usleep(100000);
+		status = bt_gatt_server_send_indication(server->gatt,
+				server->device_register_handle,
+				(const uint8_t *)END_BLE_DATA, strlen(END_BLE_DATA),notifyMessageCallback, NULL, NULL);
+
+		if (status == false){
+			logBtGattErr ("Failed to notify \"%s\"\n", END_BLE_DATA);
+			pthread_mutex_unlock(&rssi_lock);
+			pthread_mutex_unlock(&lock);
+			return;
+		}
+
+		logBtGattInfo ("Sucessfully notify \"%s\"",END_BLE_DATA);
+	} else {
+		logBtGattErr ("Invalid pointer\n");
+	}
+	pthread_mutex_unlock(&rssi_lock);
+}
+
+
 
 static void device_write_descriptor(struct gatt_db_attribute *attrib,
 		unsigned int id, uint16_t offset,
@@ -1032,6 +1186,21 @@ static void populate_device_service(struct server *server)
 			BT_ATT_PERM_WRITE | BT_ATT_PERM_READ,
 			NULL, device_write_descriptor, server);
 
+	/* Add device registration characteristic */
+	bt_uuid16_create(&uuid, UUID_DEVICE_REGISTRATION);
+	device = gatt_db_service_add_characteristic(service, &uuid,
+			BT_ATT_PERM_WRITE | BT_ATT_PERM_READ,
+			BT_GATT_CHRC_PROP_NOTIFY | BT_GATT_CHRC_PROP_WRITE | BT_GATT_CHRC_PROP_READ,
+			NULL, device_register_write_cb, server);
+	server->device_register_handle = gatt_db_attribute_get_handle(device);
+
+	bt_uuid16_create(&uuid, GATT_CLIENT_CHARAC_CFG_UUID);
+	gatt_db_service_add_descriptor(service, &uuid,
+			BT_ATT_PERM_WRITE | BT_ATT_PERM_READ,
+			NULL, device_write_descriptor, server);
+
+
+
 	gatt_db_service_set_active(service, true);
 }
 
@@ -1100,6 +1269,16 @@ static void message_callback(struct mosquitto *mosq, void *obj, const struct mos
 		return;
 	}
 
+	// For EFR32
+	mosquitto_topic_matches_sub(MQTT_SUB_REGISTRATION_RESPONSE,
+			message->topic, &match);
+	if (match) {
+		logBtGattInfo ("Device registration received\n");
+		notifyRegisteredDevices(obj, message);
+		return;
+	}
+	//
+
 	mosquitto_topic_matches_sub(MQTT_SUB_GATEWAY_DISCONNECT,
 			message->topic, &match);
 	if (match) {
@@ -1152,6 +1331,15 @@ static void connect_callback(struct mosquitto *mosq, void *obj, int result)
 			logBtGattErr("could not subscribe to topic:%s err:%d", MQTT_SUB_GATEWAY_DISCONNECT, status);
 			break;
 		}
+
+		// EFR32
+		logBtGattInfo ("Subscribe : %s\n",MQTT_SUB_REGISTRATION_RESPONSE);
+		status = mosquitto_subscribe(mosq, NULL, MQTT_SUB_REGISTRATION_RESPONSE, 0);
+		if (MOSQ_ERR_SUCCESS != status) {
+			logBtGattErr("could not subscribe to topic:%s err:%d", MQTT_SUB_REGISTRATION_RESPONSE, status);
+			break;
+		}
+		//
 
 	} while(0);
 

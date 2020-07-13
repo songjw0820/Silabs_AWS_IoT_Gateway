@@ -1,6 +1,7 @@
 {
     "groupArn": "",
     "groupName": "",
+    "gatewayId": "",
     "certificatePath": "",
     "privateKeyPath": "",
     "certificateArn": "",

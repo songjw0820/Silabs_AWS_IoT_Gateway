@@ -67,6 +67,7 @@ int AWSIoTCore::ClearConfig()
     	this->UpdateConfigFile("endpoint", "");
     	this->UpdateConfigFile("rootCACertificatePath", "");
     	this->UpdateConfigFile("thingName", "");
+    	this->UpdateConfigFile("gatewayId", "");
 
 	rapidjson::Document data;
         std::ofstream outfile;
@@ -100,11 +101,12 @@ int AWSIoTCore::ParseCreateGatewayResponse(std::string payload)
 {
 	rapidjson::Document data;
 	data.Parse(payload.c_str());
-	LOG_INFO("Loaded JSON");
+	LOG_INFO("Parsing response.....");
 	this->UpdateConfigFile("thingName", data["thing"]["thingName"].GetString());
 	//this->UpdateConfigFile("certificateArn", data["certificates"]["certificateArn"].GetString());
 	this->UpdateConfigFile("groupArn", data["group"]["thingGroupArn"].GetString());
 	this->UpdateConfigFile("groupName", data["group"]["thingGroupName"].GetString());
+	this->UpdateConfigFile("gatewayId", data["group"]["thingGroupName"].GetString());
 	this->UpdateConfigFile("endpoint", data["endpoint"]["endpointAddress"].GetString());
 
 	struct stat info;
@@ -152,8 +154,16 @@ int AWSIoTCore::ParseCreateGatewayResponse(std::string payload)
 
 	LOG_INFO("Written to file");
 
-	//this->UpdateConfigFile();
 	return 0;
+}
+void print(const rapidjson::Value &json)
+{
+        using namespace rapidjson;
+        StringBuffer sb;
+        PrettyWriter<StringBuffer> writer(sb);
+        json.Accept(writer);
+        auto str = sb.GetString();
+        LOG_INFO("%s", str);
 }
 /**
 * @brief Parse the response and update the config file
@@ -162,15 +172,15 @@ int AWSIoTCore::ParseCreateGatewayResponse(std::string payload)
 *
 * @return 
 */
-int AWSIoTCore::ParseCreateSensorResponse(std::string payload)
+rapidjson::Value AWSIoTCore::ParseCreateSensorResponse(std::string payload)
 {
 	rapidjson::Document d;
 	d.Parse(payload.c_str());
-
-	//document.Parse(attributes); // JSON Attributes
+	#ifdef DEBUG	
+		LOG_INFO("Payload: %s", payload.c_str());
+	#endif
+	LOG_INFO("Parsing the response....");
         rapidjson::Document data;
-        //rapidjson::Document deviceInfo;
-        //deviceInfo.Parse(attributes);
         std::ofstream outfile;
         FILE* fp = fopen(CONFIG_FILE, "r+");
         char readBuffer[65536];
@@ -178,28 +188,24 @@ int AWSIoTCore::ParseCreateSensorResponse(std::string payload)
         rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
         data.ParseStream(is);
         fclose(fp);
-        //
-        //data[key].SetString(value, data.GetAllocator());
 
-        //rapidjson::Value& v = deviceInfo;
+	rapidjson::Value sensorId(rapidjson::kArrayType);
         for (rapidjson::SizeType i = 0; i < d["thing"].Size(); i++) {
 
-            // work with parameterB[i]["status"], parameterB[i]["B_1"], etc.
         	rapidjson::Value device(rapidjson::kObjectType);
-        	device.AddMember("deviceName", d["thing"][i]["thingName"], data.GetAllocator());
-        	device.AddMember("deviceMacAddress", d["thing"][i]["macAddress"], data.GetAllocator());
+		sensorId.PushBack(rapidjson::Value().SetString(d["thing"][i]["thingName"].GetString(), data.GetAllocator()), data.GetAllocator()); //Create a sensorId array to return
+		device.AddMember("sensorId", d["thing"][i]["thingName"], data.GetAllocator());
+        	device.AddMember("eui64", d["thing"][i]["eui64"], data.GetAllocator());
         	device.AddMember("thingId", d["thing"][i]["thingId"], data.GetAllocator());
         	device.AddMember("thingArn", d["thing"][i]["thingArn"], data.GetAllocator());
-        	//device.AddMember("displayDeviceType", deviceInfo["displayDeviceType"], data.GetAllocator());
-        	//device.AddMember("deviceHid", deviceInfo["eui64"], data.GetAllocator());
-        	//device.AddMember("deviceName", v["name"], data.GetAllocator());
         	data["endDevices"].PushBack(device, data.GetAllocator());
+		#ifdef DEBUG
+			print(device);
+		#endif
         }
-        //LOG_INFO("Value: %s", document[0]["deviceName"].GetString());
-        //device.AddMember("name", "abhijit", document.GetAllocator());
-        //data["endDevices"].PushBack(device, document.GetAllocator());
-
-        //
+	#ifdef DEBUG
+		print(sensorId);
+	#endif
         fp = fopen(CONFIG_FILE, "w"); // non-Windows use "w"
 	char writeBuffer[65536];
         rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
@@ -208,7 +214,8 @@ int AWSIoTCore::ParseCreateSensorResponse(std::string payload)
         data.Accept(writer);
 
         fclose(fp);
-        return 0;
+	LOG_INFO("Updated the config file with sensor details...");
+        return sensorId;
 	
 }
 
@@ -239,6 +246,7 @@ std::string AWSIoTCore::CallCreateThingAPI(const char * body) {
 
 	LOG_INFO("Calling create things API with body: %s", body);
 	CURL *curl;
+	long http_code = 0;
 	CURLcode res;
 	struct curl_slist *headers = NULL;
 	std::string readBuffer;
@@ -277,20 +285,32 @@ std::string AWSIoTCore::CallCreateThingAPI(const char * body) {
 	#endif
 		/* Perform the request, res will get the return code */
 		res = curl_easy_perform(curl);
+		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
 		//printf("Response Code: %d", res);
 		/* Check for errors */
 		if(res != CURLE_OK)
-			fprintf(stderr, "curl_easy_perform() failed: %s\n",
-					curl_easy_strerror(res));
+			LOG_ERROR("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 
 		//std::cout << readBuffer << std::endl;
 
 		/* always cleanup */
 		curl_easy_cleanup(curl);
 	}
-
-        //std::string response = "OK";
-        return readBuffer;
+	if ((http_code == 200 || http_code == 204 ) && res != CURLE_ABORTED_BY_CALLBACK)
+        {
+                //Succeeded
+                LOG_INFO("Successfully fetched the response....");
+                LOG_INFO("Response code: %ld", http_code);
+                return readBuffer;
+        }
+        else
+        {
+                //Failed
+                LOG_ERROR("Error calling the API..");
+                LOG_ERROR("Response code: %ld", http_code);
+                LOG_ERROR("Error: %s", readBuffer.c_str());
+                return "ERR";
+        }
 }
 /**
 * @brief Get the Amazon root CA certificate by curl
@@ -371,8 +391,6 @@ std::string AWSIoTCore::stringify(rapidjson::GenericValue<rapidjson::UTF8<>> & o
 */
 int AWSIoTCore::WriteToFile(const char * fileName, const char * data)
 {
-	//LOG_INFO("File name: %s", fileName);
-	//LOG_INFO("Data: %s", data);
 	std::ofstream outfile;
 	outfile.open(fileName);
 	outfile << data ;
@@ -386,21 +404,9 @@ int AWSIoTCore::WriteToFile(const char * fileName, const char * data)
 */
 AWSIoTCore::AWSIoTCore()
 {
-	//Aws::SDKOptions options;
-        //options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Debug;
-        //Aws::InitAPI(options);
-	//client = new Aws::IoT::IoTClient(config);
-
-	// Initialize global curl init	
 	curl_global_init(CURL_GLOBAL_DEFAULT);
-	//Aws::Client::ClientConfiguration config;
-        //config.region = Aws::Region::US_EAST_2;
-	//client(config);
 }
 AWSIoTCore::~AWSIoTCore()
 {
-	// Curl global cleanup 	
 	curl_global_cleanup();
-
-	//Aws::ShutdownAPI(options);
 }

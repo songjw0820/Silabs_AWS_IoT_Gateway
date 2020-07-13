@@ -1,15 +1,3 @@
-/*#include <aws/core/Aws.h>
-#include <aws/iot/IoTClient.h>
-#include <aws/iot/model/AddThingToThingGroupRequest.h>
-#include <aws/iot/model/AttachThingPrincipalRequest.h>
-#include <aws/iot/model/CreatePolicyRequest.h>
-#include <aws/iot/model/CreateKeysAndCertificateRequest.h>
-#include <aws/iot/model/AttachPolicyRequest.h>
-#include <aws/iot/model/ListThingTypesRequest.h>
-#include <aws/iot/model/CreateThingTypeRequest.h>
-#include <aws/iot/model/ListPoliciesRequest.h>
-#include <aws/iot/model/DescribeEndpointRequest.h>
-#include <aws/core/utils/Outcome.h>*/
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -37,6 +25,10 @@
 #define PATH_TO_CERTS      "/opt/awsapp/certs/"
 #define CONFIG_FILE        "/opt/awsapp/config.json"
 
+// Define DEBUG macro to enable debug logs.
+// To enable DEBUG logs, uncomment the next line
+//#define DEBUG
+
 //#define CREATE_THING_ENDPOINT "http://localhost:8090/post"
 //#define CREATE_THING_ENDPOINT "http://localhost:8090/postsensors"
 #define CREATE_THING_ENDPOINT "https://bym6ctlh6e.execute-api.us-east-2.amazonaws.com/dev/creatething"
@@ -51,11 +43,10 @@ class AWSIoTCore
 		int UpdateConfigFile(const char * key, const char * value);
 		int WriteToFile(const char * fileName, const char * data);
 		std::string ReadConfigFile(const char * key);
-		//int UpdateEndDeviceConfig(Aws::String thingName, rapidjson::Value& deviceInfo);
 		std::string CallCreateThingAPI(const char * body);
 		static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp);
 		int ParseCreateGatewayResponse(std::string response);
-		int ParseCreateSensorResponse(std::string response);
+		rapidjson::Value ParseCreateSensorResponse(std::string response);
 		int ClearConfig();
 		std::string GetAmazonRootCACertificate();
 		~AWSIoTCore();

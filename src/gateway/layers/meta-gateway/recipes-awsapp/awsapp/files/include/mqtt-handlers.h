@@ -3,9 +3,10 @@
 #define DEVICE_TYPE_GATEWAY        "gateway"
 #define DEVICE_TYPE_SENSOR        "sensor"
 
-#define MQTT_SUB_CREATE_THING      "awsapp/gw/+/create/thing"
-#define MQTT_SUB_TELEMETRY         "awsapp/mqtt/+/tel"
-#define MQTT_SUB_DELETE		   "awsapp/gw/+/delete"
+#define MQTT_SUB_CREATE_THING      "awsapp/provision"
+#define MQTT_SUB_TELEMETRY         "awsapp/mqtt/tel"
+#define MQTT_SUB_DELETE		   "awsapp/delete"
+#define MQTT_PUB_BLE_RESPONSE	   "awsapp/provision/response"
 
 
 

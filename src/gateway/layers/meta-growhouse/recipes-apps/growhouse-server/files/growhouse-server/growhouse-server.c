@@ -20,6 +20,7 @@
 #define MQTT_SUB_HEARTBEAT		"gw/+/heartbeat"
 #define MQTT_SUB_DEVICES		"gw/+/devices"
 #define MQTT_SUB_DISCOVER_COMMAND	"ble/gw/discoverCommand"
+#define MQTT_SUB_REGISTER_COMMAND	"ble/gw/registerCommand" // For EFR32
 #define MQTT_SUB_PROVISIONED_DEVICE	"ble/gw/provisionedDevice"
 #define MQTT_SUB_BLE_SHUTTING_DOWN	"ble/gw/shuttingDown"
 #define MQTT_SUB_SELENE_RESPONSE	"selene/mqtt/router/seleneresponse"
@@ -27,6 +28,7 @@
 #define MQTT_SUB_SELENE_CMD_HANDLE	"selene/mqtt/zwave/device/control"
 #define MQTT_SUB_DEVICE_UPDATE_REQUEST	"selene/mqtt/router/deviceupdate"
 #define MQTT_SUB_SERVICE_UPDATE_REQUEST "selene/mqtt/router/serviceupdate"
+#define MQTT_SUB_DEVICE_PROVISION_RESPONSE	"awsapp/provision/response" // For EFR32
 
 #define MQTT_PUB_DEVICE_REGISTER                "selene/mqtt/device/register"
 #define MQTT_PUB_SELENE_REQUEST                 "selene/mqtt/router/selenereq"
@@ -36,6 +38,8 @@
 #define MQTT_PUB_GATEWAY_CONNECT_RESPONSE       "gw/ble/gatewayConnectivity"
 #define MQTT_PUB_DEVICE_CONNECT_RESPONSE        "gw/ble/deviceConnectivity"
 #define MQTT_PUB_GATEWAY_DISCONNECT             "gw/ble/gatewayDisconnect"
+#define MQTT_PUB_REGISTER_RESPONSE              "gw/ble/registerResponse" // For EFR32
+#define MQTT_PUB_DEVICE_PROVISION	        "awsapp/provision" // For EFR32
 
 #define SELENE_GATEWAY_REGISTRATION_RESPONSE    "gateway_registration_response"
 #define SELENE_DEVICE_REGISTRATION_RESPONSE     "device_registration"
@@ -106,6 +110,8 @@ enum mqtt_topic {
 	MQTT_TYPE_SELENE_CMD_HANDLE,
 	MQTT_TYPE_DEVICE_UPDATE_REQUEST,
 	MQTT_TYPE_SERVICE_UPDATE_REQUEST,
+	MQTT_TYPE_DEVICE_REGISTER, // For EFR32
+	MQTT_TYPE_DEVICE_REGISTER_RESPONSE, // For EFR32
 	MQTT_TYPE_MAX
 
 };
@@ -123,7 +129,9 @@ const char * mqtt_topic_subscribe [] = {
 	[MQTT_TYPE_SELENE_STATE_CONTROL] = MQTT_SUB_SELENE_STATE_CONTROL,
 	[MQTT_TYPE_SELENE_CMD_HANDLE] = MQTT_SUB_SELENE_CMD_HANDLE,
 	[MQTT_TYPE_DEVICE_UPDATE_REQUEST] = MQTT_SUB_DEVICE_UPDATE_REQUEST,
-	[MQTT_TYPE_SERVICE_UPDATE_REQUEST] = MQTT_SUB_SERVICE_UPDATE_REQUEST
+	[MQTT_TYPE_SERVICE_UPDATE_REQUEST] = MQTT_SUB_SERVICE_UPDATE_REQUEST,
+	[MQTT_TYPE_DEVICE_REGISTER] = MQTT_SUB_REGISTER_COMMAND, // For EFR32
+	[MQTT_TYPE_DEVICE_REGISTER_RESPONSE] = MQTT_SUB_DEVICE_PROVISION_RESPONSE // For EFR32
 };
 
 typedef struct mosquitto_message_handler {
@@ -157,8 +165,10 @@ static const MOSQUITTO_MSG_HANDLER mosquitto_message_handler_array[] = {
 		.handler = &seleneCommandHandler },
 	{ .mosquitto_topic = (int *) MQTT_SUB_DEVICE_UPDATE_REQUEST,
 		.handler = &deviceUpdateHandler },
-	{ .mosquitto_topic = (int *) MQTT_SUB_SERVICE_UPDATE_REQUEST,
-		.handler = &deviceUpdateHandler }
+	{ .mosquitto_topic = (int *) MQTT_SUB_REGISTER_COMMAND,
+		.handler = &registerDeviceHandler },
+	{ .mosquitto_topic = (int *) MQTT_SUB_DEVICE_PROVISION_RESPONSE,
+		.handler = &registerDeviceResponseHandler }
 };
 
 enum led_state_control {
@@ -1034,6 +1044,34 @@ int updateGatewayServices(struct mosquitto *mosq, cJSON * node) {
 	return 0;
 }
 
+int registerDeviceHandler(struct mosquitto *mosq, const struct mosquitto_message *message) {
+
+	int status = MOSQ_ERR_INVAL;
+        char mqttTopic[32] = {0};
+
+        status = mosquitto_publish(mosq, NULL, MQTT_PUB_DEVICE_PROVISION, strlen(message->payload), (char *)message->payload, 1, false);
+        if ( status != MOSQ_ERR_SUCCESS){
+	                logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_DEVICE_PROVISION, status);
+		                return -1;
+	}
+        logBtGattInfo ("Successfully publish register devices payload \"%s\" on topic %s\n", message->payload, MQTT_PUB_DEVICE_PROVISION);
+
+        return status;
+}
+int registerDeviceResponseHandler(struct mosquitto *mosq, const struct mosquitto_message *message) {
+
+	int status = MOSQ_ERR_INVAL;
+	char mqttTopic[32] = {0};
+
+	status = mosquitto_publish(mosq, NULL, MQTT_PUB_REGISTER_RESPONSE, strlen(message->payload), message->payload, 1, false);
+	if ( status != MOSQ_ERR_SUCCESS){
+		logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_REGISTER_RESPONSE, status);
+		return -1;
+	}
+	logBtGattInfo ("Successfully publish register devices payload \"%s\" on topic %s\n", message->payload, MQTT_PUB_REGISTER_RESPONSE);
+
+	return status;
+}
 /* deviceUpdateHandler()
  *
  * \brief : this routine is called when Firmware update is initiated from cloud.
