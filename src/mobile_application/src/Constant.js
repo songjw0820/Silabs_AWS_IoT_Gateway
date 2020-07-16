@@ -24,6 +24,7 @@ export const TABBAR_BUTTON_SELECTED_COLOR = PRIMARY_COLOR
 
 export const BLE_PAYLOAD_PREFIX = '---BEGIN BLE DATA---'
 export const BLE_PAYLOAD_SUFFIX = '----END BLE DATA----'
+export const BLE_RESPONSE_STATUS = 'success'
 
 
 export const DEVICES_COUNT = 'devices_count';
@@ -37,17 +38,17 @@ export const LIGHT_SHIELD_COUNT = 'light_shields_count';
 export const DEFAULT_DEVICE_COUNT = '-'
 
 export const KNOWN_BLE_SERVICES = {
-  SERVICE_GATEWAY_PROVISION_UUID: bleDebug ? '0000fff0' : '00003a25',
+  SERVICE_GATEWAY_PROVISION_UUID: bleDebug ? '0000fff0' : '00003a35',
   SERVICE_DEVICE_PROVISION_UUID: bleDebug ? '0000fff0' : '00003a35'
 }
 
 export const KNOWN_BLE_CHARACTERISTICS = {
-  CHAR_GATEWAY_ACCOUNT_UUID: bleDebug ? '0000fff4' : '00003a26',
+  CHAR_GATEWAY_ACCOUNT_UUID: bleDebug ? '0000fff4' : '00003a39',
   CHAR_GATEWAY_WIFI_MAC_UUID: bleDebug ? '0000fff1' : '00003a27',
   CHAR_DEVICE_DISCOVER_COMMAND_UUID: bleDebug ? '0000fff4' : '00003a36',
   CHAR_DEVICE_DISCOVER_PROVISION_UUID: bleDebug ? '0000fff4' : '00003a37',
   CHAR_DEVICE_PROVISION_CALLBACK_UUID: bleDebug ? '0000fff4' : '00003a38',
-  CHAR_GATEWAY_CONNECTIVITY: bleDebug ? '0000fff4' : '00003a29'
+  CHAR_GATEWAY_CONNECTIVITY: bleDebug ? '0000fff4' : '00003a39'
 }
 
 

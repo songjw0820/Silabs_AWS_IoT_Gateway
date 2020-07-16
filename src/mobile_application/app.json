@@ -1,7 +1,7 @@
 {
-  "name": "GrowHouse",
+  "name": "EFR32 IoT Gateway",
   "softwareName":"GrowhouseGWSelene",
-  "displayName": "GrowHouse",
+  "displayName": "EFR32 IoT Gateway",
   "version": "1.0.23",  
   "selene": "0.0.0",
   "gateway_discovery_name_prefix": "GH_gw_",
