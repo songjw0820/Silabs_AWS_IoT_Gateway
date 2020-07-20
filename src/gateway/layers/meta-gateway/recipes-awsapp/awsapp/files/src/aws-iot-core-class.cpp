@@ -68,6 +68,7 @@ int AWSIoTCore::ClearConfig()
     	this->UpdateConfigFile("rootCACertificatePath", "");
     	this->UpdateConfigFile("thingName", "");
     	this->UpdateConfigFile("gatewayId", "");
+    	this->UpdateConfigFile("provisioned", "");
 
 	rapidjson::Document data;
         std::ofstream outfile;
@@ -108,6 +109,7 @@ int AWSIoTCore::ParseCreateGatewayResponse(std::string payload)
 	this->UpdateConfigFile("groupName", data["group"]["thingGroupName"].GetString());
 	this->UpdateConfigFile("gatewayId", data["group"]["thingGroupName"].GetString());
 	this->UpdateConfigFile("endpoint", data["endpoint"]["endpointAddress"].GetString());
+	this->UpdateConfigFile("provisioned", "true");
 
 	struct stat info;
 	if( stat( PATH_TO_CERTS, &info ) != 0 ) {

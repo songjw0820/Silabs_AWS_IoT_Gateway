@@ -21,6 +21,7 @@
 #define MQTT_SUB_DEVICES		"gw/+/devices"
 #define MQTT_SUB_DISCOVER_COMMAND	"ble/gw/discoverCommand"
 #define MQTT_SUB_REGISTER_COMMAND	"ble/gw/registerCommand" // For EFR32
+#define MQTT_SUB_DELETE_COMMAND         "ble/gw/deleteCommand" // For EFR32
 #define MQTT_SUB_PROVISIONED_DEVICE	"ble/gw/provisionedDevice"
 #define MQTT_SUB_BLE_SHUTTING_DOWN	"ble/gw/shuttingDown"
 #define MQTT_SUB_SELENE_RESPONSE	"selene/mqtt/router/seleneresponse"
@@ -40,6 +41,7 @@
 #define MQTT_PUB_GATEWAY_DISCONNECT             "gw/ble/gatewayDisconnect"
 #define MQTT_PUB_REGISTER_RESPONSE              "gw/ble/registerResponse" // For EFR32
 #define MQTT_PUB_DEVICE_PROVISION	        "awsapp/provision" // For EFR32
+#define MQTT_PUB_DEVICE_DELETE                 "awsapp/delete" // For EFR32
 
 #define SELENE_GATEWAY_REGISTRATION_RESPONSE    "gateway_registration_response"
 #define SELENE_DEVICE_REGISTRATION_RESPONSE     "device_registration"
@@ -112,6 +114,7 @@ enum mqtt_topic {
 	MQTT_TYPE_SERVICE_UPDATE_REQUEST,
 	MQTT_TYPE_DEVICE_REGISTER, // For EFR32
 	MQTT_TYPE_DEVICE_REGISTER_RESPONSE, // For EFR32
+	MQTT_TYPE_DEVICE_DELETE, // For EFR32
 	MQTT_TYPE_MAX
 
 };
@@ -131,7 +134,8 @@ const char * mqtt_topic_subscribe [] = {
 	[MQTT_TYPE_DEVICE_UPDATE_REQUEST] = MQTT_SUB_DEVICE_UPDATE_REQUEST,
 	[MQTT_TYPE_SERVICE_UPDATE_REQUEST] = MQTT_SUB_SERVICE_UPDATE_REQUEST,
 	[MQTT_TYPE_DEVICE_REGISTER] = MQTT_SUB_REGISTER_COMMAND, // For EFR32
-	[MQTT_TYPE_DEVICE_REGISTER_RESPONSE] = MQTT_SUB_DEVICE_PROVISION_RESPONSE // For EFR32
+	[MQTT_TYPE_DEVICE_REGISTER_RESPONSE] = MQTT_SUB_DEVICE_PROVISION_RESPONSE, // For EFR32
+        [MQTT_TYPE_DEVICE_DELETE] = MQTT_SUB_DELETE_COMMAND // For EFR32
 };
 
 typedef struct mosquitto_message_handler {
@@ -168,7 +172,9 @@ static const MOSQUITTO_MSG_HANDLER mosquitto_message_handler_array[] = {
 	{ .mosquitto_topic = (int *) MQTT_SUB_REGISTER_COMMAND,
 		.handler = &registerDeviceHandler },
 	{ .mosquitto_topic = (int *) MQTT_SUB_DEVICE_PROVISION_RESPONSE,
-		.handler = &registerDeviceResponseHandler }
+		.handler = &registerDeviceResponseHandler },
+	{ .mosquitto_topic = (int *) MQTT_SUB_DELETE_COMMAND,
+                .handler = &deleteDeviceHandler }
 };
 
 enum led_state_control {
@@ -1069,6 +1075,20 @@ int registerDeviceResponseHandler(struct mosquitto *mosq, const struct mosquitto
 		return -1;
 	}
 	logBtGattInfo ("Successfully publish register devices payload \"%s\" on topic %s\n", message->payload, MQTT_PUB_REGISTER_RESPONSE);
+
+	return status;
+}
+int deleteDeviceHandler(struct mosquitto *mosq, const struct mosquitto_message *message) {
+
+	int status = MOSQ_ERR_INVAL;
+	char mqttTopic[32] = {0};
+
+	status = mosquitto_publish(mosq, NULL, MQTT_PUB_DEVICE_DELETE, strlen(message->payload), (char *)message->payload, 1, false);
+	if ( status != MOSQ_ERR_SUCCESS){
+		logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_DEVICE_DELETE, status);
+		return -1;
+	}
+	logBtGattInfo ("Successfully publish delete devices payload \"%s\" on topic %s\n", message->payload, MQTT_PUB_DEVICE_DELETE);
 
 	return status;
 }

@@ -18,10 +18,9 @@
 #include <mosquitto.h>
 #include "macrologger.h"
 
-
-#define THING_TYPE_GATEWAY "gateway"
-#define THING_TYPE_DEVICE  "endDevice"
-#define THING_TYPE_SENSOR  "sensor"
+#define DEVICE_TYPE_GATEWAY        "gateway"
+#define DEVICE_TYPE_SENSOR        "sensor"
+#define DEVICE_TYPE_SENTIMATE        "sentimate"
 #define PATH_TO_CERTS      "/opt/awsapp/certs/"
 #define CONFIG_FILE        "/opt/awsapp/config.json"
 

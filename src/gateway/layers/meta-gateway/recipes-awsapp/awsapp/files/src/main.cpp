@@ -69,8 +69,8 @@ void connect_callback(struct mosquitto *mosq, void *obj, int result)
 int telemetry(struct mosquitto *mosq, const struct mosquitto_message *message)
 {
 	LOG_INFO("Received message for telemetry: %s", (char *)message->payload);
-	auto thingName = core->ReadConfigFile("thingName");
-	auto topicName = std::string("gateway/") + std::string(thingName.c_str()) + "/telemetry"; 
+	auto gatewayId = core->ReadConfigFile("gatewayId");
+	auto topicName = std::string("gateway/") + std::string(gatewayId.c_str()) + "/telemetry"; 
 	LOG_INFO("Publishing message to topic: %s", topicName.c_str());
 	auto rc = device->Publish(topicName.c_str(), (char *)message->payload);
 	return rc;
@@ -78,10 +78,45 @@ int telemetry(struct mosquitto *mosq, const struct mosquitto_message *message)
 
 int deleteThing(struct mosquitto *mosq, const struct mosquitto_message *message)
 {
-	LOG_INFO("Clearing config file.....");
-	core->ClearConfig();
-	std::exit(42);
-	return 0;
+	document.Parse((char *)message->payload);
+        FILE* fp = fopen(CONFIG_FILE, "r+");
+        char readBuffer[65536];
+
+        rapidjson::Document data;
+        rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
+        data.ParseStream(is);
+        fclose(fp);
+        for( rapidjson::SizeType i = 0; i < document.Size(); i++ )
+        {
+                if(document[i]["deviceType"] == DEVICE_TYPE_GATEWAY)
+                {
+                        LOG_INFO("Clearing config file.....");
+                        core->ClearConfig();
+                        std::exit(42);
+                }
+                else if(document[i]["deviceType"] == DEVICE_TYPE_SENTIMATE)
+                {
+                        LOG_INFO("in sentimate type");
+                        for(rapidjson::Value::ConstValueIterator itr = data["endDevices"].Begin(); itr != data["endDevices"].End(); ++itr)
+                        {
+                                if((*itr)["eui64"] == document[i]["eui64"])
+                                {
+                                        LOG_INFO("Match found!");
+                                        LOG_INFO("Removing sensor details from config file.....");
+                                        data["endDevices"].Erase(itr);
+                                }
+                        }
+                }
+        }
+        fp = fopen(CONFIG_FILE, "w"); // non-Windows use "w"
+        char writeBuffer[65536];
+        rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
+
+	rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+        data.Accept(writer);
+
+        fclose(fp);
+        return 0;
 }
 /**
 * @brief handler to create a thing(gateway or end device) based on the MQTT message from growhouse server.

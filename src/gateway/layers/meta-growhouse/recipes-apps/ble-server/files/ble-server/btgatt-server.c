@@ -60,6 +60,7 @@
 #define UUID_DEVICE_DISCOVERED_LIST	0x3A37
 #define UUID_DEVICE_CONNECTIVITY	0x3A38
 #define UUID_DEVICE_REGISTRATION	0x3A39 // For EFR32
+#define UUID_DEVICE_DELETION            0x3A40 // For EFR32
 
 #define ATT_CID 4
 #define LE_LINK 0x80
@@ -80,6 +81,7 @@
 
 #define MQTT_PUB_DISCOVER_COMMAND       	"ble/gw/discoverCommand"
 #define MQTT_PUB_REGISTER_COMMAND       	"ble/gw/registerCommand" // For EFR32
+#define MQTT_PUB_DELETE_COMMAND                 "ble/gw/deleteCommand" // For EFR32
 #define MQTT_PUB_PROVISIONED_DEVICE     	"ble/gw/provisionedDevice"
 #define MQTT_PUB_BLE_SHUTTING_DOWN		"ble/gw/shuttingDown"
 #define MQTT_SUB_DISCOVERED_DEVICE      	"gw/ble/discoveredDevice"
@@ -215,7 +217,8 @@ struct server {
 	uint16_t device_discover_handle;
 	uint16_t device_list_handle;
 	uint16_t device_connectivity_handle;
-	uint16_t device_register_handle;
+	uint16_t device_register_handle; // For EFR32
+	uint16_t device_delete_handle; // For EFR32
 
 	/* mosquitto specific */
 	struct mosquitto *mosq;
@@ -556,6 +559,79 @@ static void device_register_write_cb(struct gatt_db_attribute *attrib,
 		gatt_db_attribute_write_result(attrib, id, BLE_WRITE_ERROR);
 	}
 	pthread_mutex_unlock(&rssi_lock);
+}
+
+static void device_delete_write_cb(struct gatt_db_attribute *attrib,
+               unsigned int id, uint16_t offset,
+               const uint8_t *value, size_t len,
+               uint8_t opcode, struct bt_att *att,
+               void *user_data)
+{
+       uint8_t ecode = 0;
+       struct server * server = user_data;
+       int status = MOSQ_ERR_INVAL;
+       logBtGattInfo ("Device delete command callback\n");
+
+       pthread_mutex_lock(&rssi_lock);
+       if (value) {
+
+               logBtGattInfo ("Received data len %lu :: %s\n", len, value);
+               if (!strncmp((char *)value, BEGIN_BLE_DATA, strlen((char *)BEGIN_BLE_DATA))) {
+                       logBtGattInfo ("%s\n", BEGIN_BLE_DATA);
+                       if (server->msg_buf) {
+                               logBtGattInfo ("Already memory allocated... Free memory\n");
+                               free(server->msg_buf);
+                               server->msg_buf = NULL;
+                       }
+                       server->msg_buf = (char *)calloc(CMD_CHUNK_SIZE, sizeof(char));
+                       if ( server->msg_buf == NULL ) {
+                               logBtGattErr ("failed to allocate memory\n");
+                               gatt_db_attribute_write_result(attrib, id, BLE_WRITE_ERROR);
+                               pthread_mutex_unlock(&rssi_lock);
+                               return;
+                       }
+                       server->msg_len = CMD_CHUNK_SIZE;
+                       gatt_db_attribute_write_result(attrib, id, ecode);
+                       pthread_mutex_unlock(&rssi_lock);
+                       return;
+
+               } else if (!strncmp((char *)value, END_BLE_DATA, strlen((char *)END_BLE_DATA))) {
+                       logBtGattInfo ("%s\n", END_BLE_DATA);
+
+                       /* Publish to growhouse-server*/
+                       status = mosquitto_publish(server->mosq, NULL, MQTT_PUB_DELETE_COMMAND, strlen(server->msg_buf), server->msg_buf, 1, false);
+                       if ( status != MOSQ_ERR_SUCCESS){
+                               logBtGattErr ("could not publish to topic:%s err:%d", MQTT_PUB_DELETE_COMMAND, status);
+                               ecode = BLE_WRITE_ERROR;
+                       } else {
+                               logBtGattInfo ("Successfully publish Device delete command : \"%s\" on topic %s\n", server->msg_buf, MQTT_PUB_DELETE_COMMAND);
+                       }
+                       free(server->msg_buf);
+                       server->msg_buf = NULL;
+                       gatt_db_attribute_write_result(attrib, id, ecode);
+                       pthread_mutex_unlock(&rssi_lock);
+                       return;
+
+               } else if (server->msg_buf) {
+                       if (server->msg_len <= (strlen(server->msg_buf) + len)) {
+                               server->msg_buf = (char *)realloc(server->msg_buf, server->msg_len + CMD_CHUNK_SIZE);
+                               if ( server->msg_buf == NULL ) {
+                                       logBtGattErr ("failed to allocate memory\n");
+                                       gatt_db_attribute_write_result(attrib, id, BLE_WRITE_ERROR);
+                                       pthread_mutex_unlock(&rssi_lock);
+                                       return;
+                               }
+                               memset ( server->msg_buf + strlen (server->msg_buf) , 0x0, CMD_CHUNK_SIZE);
+                               server->msg_len += CMD_CHUNK_SIZE;
+                       }
+                       strncpy( (server->msg_buf + strlen(server->msg_buf)), (const char *)value, len);
+                       gatt_db_attribute_write_result(attrib, id, ecode);
+               }
+       } else {
+               logBtGattErr ("Invalid pointer\n");
+               gatt_db_attribute_write_result(attrib, id, BLE_WRITE_ERROR);
+       }
+       pthread_mutex_unlock(&rssi_lock);
 }
 
 
@@ -1186,7 +1262,7 @@ static void populate_device_service(struct server *server)
 			BT_ATT_PERM_WRITE | BT_ATT_PERM_READ,
 			NULL, device_write_descriptor, server);
 
-	/* Add device registration characteristic */
+	/* Add device registration characteristic for EFR32 */
 	bt_uuid16_create(&uuid, UUID_DEVICE_REGISTRATION);
 	device = gatt_db_service_add_characteristic(service, &uuid,
 			BT_ATT_PERM_WRITE | BT_ATT_PERM_READ,
@@ -1194,12 +1270,19 @@ static void populate_device_service(struct server *server)
 			NULL, device_register_write_cb, server);
 	server->device_register_handle = gatt_db_attribute_get_handle(device);
 
+
+	/* Add device deletion characteristic for EFR32 */
+	bt_uuid16_create(&uuid, UUID_DEVICE_DELETION);
+	device = gatt_db_service_add_characteristic(service, &uuid,
+			BT_ATT_PERM_WRITE | BT_ATT_PERM_READ,
+			BT_GATT_CHRC_PROP_NOTIFY | BT_GATT_CHRC_PROP_WRITE | BT_GATT_CHRC_PROP_READ,
+			NULL, device_delete_write_cb, server);
+	server->device_delete_handle = gatt_db_attribute_get_handle(device);
+
 	bt_uuid16_create(&uuid, GATT_CLIENT_CHARAC_CFG_UUID);
 	gatt_db_service_add_descriptor(service, &uuid,
 			BT_ATT_PERM_WRITE | BT_ATT_PERM_READ,
 			NULL, device_write_descriptor, server);
-
-
 
 	gatt_db_service_set_active(service, true);
 }
