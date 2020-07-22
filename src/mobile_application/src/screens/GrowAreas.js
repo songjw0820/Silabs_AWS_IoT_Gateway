@@ -39,7 +39,7 @@ class GrowAreas extends Component {
   reSendingPayloadCount = 0;
   errorCode = 0;
   provisionCallbackCharSubscription = null;
-  
+
   constructor(props) {
     super(props);
     Navigation.events().bindComponent(this);
@@ -121,7 +121,7 @@ class GrowAreas extends Component {
 
   _onRefresh = () => {
     this.setState({ refreshing: true, searching: true, filterKey: '' });
-    
+
     AsyncStorage.multiGet(['accessToken', 'APPLE_LOGGED_IN', 'userEmail','email']).then(response => {
       let token = response[0][1];
       let appleKey = response[1][1];
@@ -316,7 +316,7 @@ class GrowAreas extends Component {
     else { alert("Please provide valid gateway description. (Maximum length 200)"); return; }
     if (this.state.gatewayMacId.trim()) payload.gatewayMacId = this.state.gatewayMacId
     else { alert("Gateway Mac address not found."); return; }
-    
+
 
     payload.users = this.props.users.filter(item => {
       return this.state.selectedUsers.includes(item.email_id);
@@ -649,7 +649,7 @@ class GrowAreas extends Component {
     })
   }
 
-  
+
    handleProvisionCallbackNotifications (gatewayProvisionCallbackChar, Gatewaypayload) {
     console.log("Subscribing to provision callback characteristic..");
     let validPayload = '';
@@ -668,7 +668,7 @@ class GrowAreas extends Component {
         let message = Base64.atob(characteristic.value);
         console.log("GatewayProvisionCallbackMessage:" + message);
         if (message === Constant.BLE_PAYLOAD_PREFIX){
-            validPayload = ''; 
+            validPayload = '';
             console.log("Got begin payload");
           }
         else if (message === Constant.BLE_PAYLOAD_SUFFIX) {
@@ -685,7 +685,7 @@ class GrowAreas extends Component {
                     this.setState({gateways});
                     }).catch((error) => {
                             console.log('error in saving name', error);
-            
+
                         })
                 alert(payload['statusMessage']);
               }else
@@ -799,15 +799,16 @@ class GrowAreas extends Component {
         name: 'DevicesScreen',
         passProps: {
           selectedGrowArea: {
-            id: growArea.id,
-            name: growArea.grow_area_name,
-            location: growArea.container.facility.locality.name,
-            uid: growArea.grow_area_uid,
-            macId: growArea.mac_id
+            id: growArea.gatewayId,
+            name: growArea.gatewayName,
+             macId: growArea.macAddress,
+           // location: growArea.container.facility.locality.name,
+           // uid: growArea.grow_area_uid,
+
           },
-          gateway: growArea,
-          selectedContainer: this.props.selectedContainer,
-          selectedFacility: this.props.selectedFacility
+          gateway: growArea
+//          selectedContainer: this.props.selectedContainer,
+//          selectedFacility: this.props.selectedFacility
         },
         options: {
           topBar: {
@@ -913,7 +914,7 @@ class GrowAreas extends Component {
     let containerId = this.state.containerId;
     // let listData = this.getListData() || [];
     let listData = this.getGatewayList() || [];
-    
+
     let growAreasList = (
       <FlatList
         data={listData}
@@ -922,7 +923,7 @@ class GrowAreas extends Component {
             borderBottomWidth: 2
           }] : styles.listItem}>
             <View style={{ width: '80%' }}>
-              <TouchableOpacity onPress={() => { }}>
+              <TouchableOpacity onPress={() => this.onViewDevices(item)}>
                 <View style={{}}>
                   <Text style={{ fontWeight: 'bold' }} >{item.gatewayName}</Text>
                   <Text style={{}}>{item.macAddress}</Text>
@@ -985,7 +986,7 @@ class GrowAreas extends Component {
 
     );
 
-   
+
 
     if (this.props.isLoading) {
       growAreasList = <View style={styles.activityIndicator}><ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} /></View>;
@@ -1112,7 +1113,7 @@ class GrowAreas extends Component {
       <ScrollView>
         <Text style={{ fontWeight: "bold", fontSize: 20, padding: 10, borderBottomWidth: 1 }}> Register Gateway </Text>
         <ScrollView contentContainerStyle={styles.inputContainer}>
-          
+
           <TextField label='Gateway Name' onChangeText={(gatewayName) => this.setState({ gatewayName })} value={this.state.gatewayName} labelHeight={18} />
           <TextField label='Description' onChangeText={(gatewayDescription) => this.setState({ gatewayDescription })} value={this.state.gatewayDescription} labelHeight={18} />
         </ScrollView>
@@ -1144,9 +1145,9 @@ class GrowAreas extends Component {
             userId: JSON.parse(this.state.email) ,
             deviceType: "gateway",
             description:this.state.gatewayDescription
-          
+
           }
-      ]; 
+      ];
         console.log("REGISTRATION_SUCCESS_TO_INTERNAL_CLOUD2");
         console.log("UId:" + this.state.gatewayUId);
         var gatewayRegCharFound = false;

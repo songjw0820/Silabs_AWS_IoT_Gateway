@@ -115,7 +115,9 @@ class Login extends React.Component {
         const userInfo = await Auth.currentAuthenticatedUser();
         console.log('-------',JSON.stringify(userInfo.signInUserSession.accessToken.jwtToken));
         let gatewayList=[];
+        let sensorDetails = [];
         AsyncStorage.setItem('listGateway',JSON.stringify(gatewayList));
+        AsyncStorage.setItem('sensorList',JSON.stringify(sensorDetails));
         AsyncStorage.setItem('email',JSON.stringify(userInfo.signInUserSession.idToken.payload.email));
         AsyncStorage.setItem('accessToken',JSON.stringify(userInfo.signInUserSession.accessToken.jwtToken)).then((token) => {
         this.setState({
