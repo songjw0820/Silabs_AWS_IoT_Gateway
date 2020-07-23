@@ -37,7 +37,7 @@ class SideDrawer extends Component {
 
  signOut = async () => {
     await Auth.signOut()
-    AsyncStorage.multiRemove(['accessToken','listGateway']).then(()=> {
+    AsyncStorage.multiRemove(['accessToken','listGateway','sensorList']).then(()=> {
         console.log('successfully logged out');
       }).catch((error) => {
            console.log('error in removing account', error);

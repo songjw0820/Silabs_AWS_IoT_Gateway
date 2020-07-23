@@ -5,7 +5,7 @@ import Auth from '@aws-amplify/auth';
 import config from "../../aws-exports"
 import App from "../../App";
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
-
+import * as Urls from '../Urls';
 // New ----
 import { AmplifyTheme } from 'aws-amplify-react-native';
 const {width,height} = Dimensions.get('window');
@@ -111,23 +111,42 @@ class Login extends React.Component {
      isLoading: true
    };
 
-   async componentDidMount() {
-        const userInfo = await Auth.currentAuthenticatedUser();
-        console.log('-------',JSON.stringify(userInfo.signInUserSession.accessToken.jwtToken));
-        let gatewayList=[];
-        let sensorDetails = [];
-        AsyncStorage.setItem('listGateway',JSON.stringify(gatewayList));
-        AsyncStorage.setItem('sensorList',JSON.stringify(sensorDetails));
-        AsyncStorage.setItem('email',JSON.stringify(userInfo.signInUserSession.idToken.payload.email));
+  async componentDidMount() {
+    const userInfo = await Auth.currentAuthenticatedUser();
+    let email=JSON.stringify(userInfo.signInUserSession.idToken.payload.email);
+    let url = Urls.GET_USER+userInfo.signInUserSession.idToken.payload.email;
+    let gatewaylist=[];
+    let sensorlist=[];
+    try{
+        const response = await fetch(url,{ method: "GET",headers: {'Accept': 'application/json','Content-Type' : 'application/json' }})
+        if(response.ok)
+          {
+            const result = await response.json();
+            console.log("response in json---"+result);
+            AsyncStorage.setItem('listGateway',JSON.stringify(result['gateways']));
+            AsyncStorage.setItem('sensorList',JSON.stringify(result['sensors']));
+          }
+        else
+          {
+            AsyncStorage.setItem('listGateway',JSON.stringify(gatewaylist));
+            AsyncStorage.setItem('sensorList',JSON.stringify(sensorlist));
+            alert('Error occured while featching user info');
+          }
+        AsyncStorage.setItem('email',email);
         AsyncStorage.setItem('accessToken',JSON.stringify(userInfo.signInUserSession.accessToken.jwtToken)).then((token) => {
         this.setState({
-           isLoading: false
+          isLoading: false
         }); App();
         }).catch((error) => {
-               console.log('error in saving name', error);
+              console.log('error in saving name', error);
 
-           })
-   }
+          })
+    }catch(err)
+      {
+        console.log(err.message);
+      }
+}
+
    render() {
      if (this.state.isLoading) {
        return <View style={styles.container}><Text>Loading...</Text></View>;
@@ -148,4 +167,3 @@ const styles = StyleSheet.create({
 
 // New ----
 export default withAuthenticator(Login, includeGreetings = false,authenticatorComponents = [], federated = null, theme = new_theme, signUpConfig = {})
-
