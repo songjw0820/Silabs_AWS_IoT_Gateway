@@ -87,6 +87,7 @@ static int registerDeviceHandler(struct mosquitto *mosq , const struct mosquitto
 static int registerDeviceResponseHandler(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
 static int deleteDeviceHandler(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
 static int provisionSensor(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
+static int deviceDeletionRequest(struct mosquitto *mosq, char * eui64DeleteDevice); // For EFR32
 
 enum mqtt_topic {
 
@@ -1048,6 +1049,18 @@ static int deleteDeviceHandler(struct mosquitto *mosq, const struct mosquitto_me
 	int status = MOSQ_ERR_INVAL;
 	char mqttTopic[32] = {0};
 
+	// Delete device from Zigbee
+	cJSON * data = cJSON_Parse(message->payload);
+	cJSON * elem = NULL;
+	cJSON * eui64DeleteDevice = NULL;
+	int length = cJSON_GetArraySize(data);
+	for( int i =0;i<length;i++)
+	{
+		elem = cJSON_GetArrayItem(data, i);
+		eui64DeleteDevice = cJSON_GetObjectItem(elem, "eui64");
+		logBtGattInfo("Deleting eui64: %s from Zigbee network....\n", eui64DeleteDevice->valuestring);
+		status = deviceDeletionRequest(mosq, eui64DeleteDevice->valuestring);
+	}
 	status = mosquitto_publish(mosq, NULL, MQTT_PUB_DEVICE_DELETE, strlen(message->payload), (char *)message->payload, 1, false);
 	if ( status != MOSQ_ERR_SUCCESS){
 		logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_DEVICE_DELETE, status);
@@ -1083,6 +1096,71 @@ static int zigbeeRemoveDevice(struct mosquitto *mosq, char * nodeId) {
 	logBtGattInfo ("Successfully publish device deletion payload \"%s\" on topic %s\n", command, mqttTopic);
 
 	return 0;
+}
+
+/* deviceDeletionRequest()
+ *
+ * \brief : this routine remove device from gateway network.
+ *
+ * \param [in] mosq              : Pointer to instance of mosquitto.
+ * \param [in] eui64DeleteDevice : EUI64 of the device.`
+ *
+ * \return : 0 on success , -1 on failure
+ */
+static int deviceDeletionRequest(struct mosquitto *mosq, char * eui64DeleteDevice)
+{
+	int l_count = 0;
+	int discoveredDeviceCount = 0;
+	int status = 0;
+	char * nodeId = NULL;
+
+	// Remove device from device joined list
+	discoveredDeviceCount = cJSON_GetArraySize(root);
+
+	for (l_count = 0 ; l_count < discoveredDeviceCount; l_count++) {
+
+		cJSON * deviceObject = cJSON_GetArrayItem(root, l_count);
+		cJSON * deviceEndpoint = cJSON_GetObjectItem(deviceObject, "deviceEndpoint");
+		char * eui64String = cJSON_GetObjectItem(deviceEndpoint, "eui64")->valuestring;
+
+		if (!strncmp(eui64DeleteDevice,&eui64String[2],strlen(eui64DeleteDevice))) {
+			nodeId = cJSON_GetObjectItem(deviceObject, "nodeId")->valuestring;
+
+			// No need to send unbind command as custom command is used to bind device
+			/*
+			   status = zigbeeUnbindDevice(mosq, deviceObject);
+			   if ( status == -1){
+			   logBtGattErr ("Failed to unbind device : %s\n",nodeId);
+			   return -1;
+			   }
+			   */
+			status = zigbeeRemoveDevice(mosq, nodeId);
+			if ( status == -1){
+				logBtGattErr ("Failed to remove device : %s\n",nodeId);
+				return -1;
+			}
+			cJSON_DeleteItemFromArray(root, l_count);
+			printAllDeviceList();
+			break;
+		}
+	}
+
+	// Remove device from provisioned list
+	discoveredDeviceCount = cJSON_GetArraySize(provisionedDeviceList);
+
+	for (l_count = 0 ; l_count < discoveredDeviceCount; l_count++) {
+
+		cJSON * deviceObject = cJSON_GetArrayItem(provisionedDeviceList, l_count);
+		char * eui64String = cJSON_GetObjectItem(deviceObject, "deviceUid")->valuestring; // Validate here
+
+		if (!strncmp(eui64DeleteDevice,eui64String,strlen(eui64DeleteDevice))) {
+			cJSON_DeleteItemFromArray(provisionedDeviceList, l_count);
+			printProvisionedDeviceList();
+			save_provisioned_device_list();
+			break;
+		}
+	}
+	return status;
 }
 
 /* zigbeeUnbindDevice()
