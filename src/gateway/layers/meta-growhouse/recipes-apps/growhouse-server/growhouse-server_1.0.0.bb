@@ -3,7 +3,7 @@
 #    Copyright(C) 2018                                                  #
 #########################################################################
 
-SUMMARY = "Application which talks to selene, zigbee-coordinator and ble server"
+SUMMARY = "Application which talks to awsapp, zigbee-coordinator and ble server"
 LICENSE = "CLOSED"
 
 SRC_URI = "file://growhouse-server/ file://growhouse-server.service"
@@ -17,6 +17,8 @@ DEPENDS += "mosquitto cjson"
 FILES_${PN} = "/usr/sbin/"
 
 INSANE_SKIP_${PN} = "ldflags"
+
+EXTRA_OEMAKE = "'CFLAGS=${CFLAGS}'"
 
 do_compile() {
 	cd growhouse-server

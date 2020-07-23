@@ -19,10 +19,10 @@
 #include <signal.h>
 #include <mosquitto.h>
 #include <cJSON.h>
+#include <errno.h>
 
 /*TODO Add information about SCM and LED Node*/
 
-#define GROWHOUSE_SERVICE_VERSION 6
 #define ATTRIBUTE_DATATYPE_INT16_LEN  2
 /******************** logging macros **************************************/
 #if 1
@@ -58,7 +58,7 @@ enum Constants {
 	DEVICE_ID_HA_ON_OFF_LIGHT = 0x0103,
 	DEVICE_ID_EXTENDED_COLOR_LIGHT = 0x0210,
 	DEVICE_ID_COLOR_TEMPERATURE_LIGHT = 0x0220,
-	DEVICE_TYPE_SENSOR = 0x0302,
+	DEVICE_ID_TEMPERATURE_SENSOR = 0x0302,
 	DEVICE_TYPE_CONTACT_SENSOR = 0x0402,
 	DEVICE_TYPE_SMART_PLUG = 0x0051,
 	DEVICE_TYPE_OCCUPANCY_SENSOR = 0x0107,
@@ -228,24 +228,7 @@ enum Constants {
 
 };
 
-//mosquitto handler function defination
-
-int onDeviceListReceived(struct mosquitto *mosq, const struct mosquitto_message *message);
-int newDeviceJoinedRequest(struct mosquitto *mosq, const struct mosquitto_message *message);
-int provisionDevice(struct mosquitto *mosq , const struct mosquitto_message *message);
-int onZCLResponse(struct mosquitto *mosq, const struct mosquitto_message *message);
-int checkGatewayHeartbeat(struct mosquitto *mosq, const struct mosquitto_message *message);
-int discoverDevices(struct mosquitto *mosq, const struct mosquitto_message *message);
-int checkSeleneResponse(struct mosquitto *mosq, const struct mosquitto_message *message);
-int deviceStateControl(struct mosquitto *mosq, const struct mosquitto_message *message);
-int bleShuttingDownCallback(struct mosquitto *mosq, const struct mosquitto_message *message);
-int seleneCommandHandler(struct mosquitto *mosq , const struct mosquitto_message *message);
-int deviceUpdateHandler(struct mosquitto *mosq , const struct mosquitto_message *message);
-int registerDeviceHandler(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
-int registerDeviceResponseHandler(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
-int deleteDeviceHandler(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
 void updateDeviceStatus(char * eui64, struct mosquitto * mosq);
-void printProvisionedDeviceList();
 void startDeviceMonitor();
 #endif // __GROWHOUSE_SERVER_H__
 

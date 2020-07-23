@@ -15,39 +15,21 @@
 #define mqtt_host "localhost"
 #define mqtt_port 1883
 
-#define MQTT_SUB_DEVICE_JOINED 		"gw/+/devicejoined"
-#define MQTT_SUB_ZCL_RESPONSE 		"gw/+/zclresponse"
+#define MQTT_SUB_DEVICE_JOINED		"gw/+/devicejoined"
+#define MQTT_SUB_ZCL_RESPONSE		"gw/+/zclresponse"
 #define MQTT_SUB_HEARTBEAT		"gw/+/heartbeat"
 #define MQTT_SUB_DEVICES		"gw/+/devices"
 #define MQTT_SUB_DISCOVER_COMMAND	"ble/gw/discoverCommand"
 #define MQTT_SUB_REGISTER_COMMAND	"ble/gw/registerCommand" // For EFR32
-#define MQTT_SUB_DELETE_COMMAND         "ble/gw/deleteCommand" // For EFR32
-#define MQTT_SUB_PROVISIONED_DEVICE	"ble/gw/provisionedDevice"
+#define MQTT_SUB_DELETE_COMMAND		"ble/gw/deleteCommand" // For EFR32
+#define MQTT_SUB_PROVISION_SENSOR	"ble/gw/provisionDevice" // For EFR32
 #define MQTT_SUB_BLE_SHUTTING_DOWN	"ble/gw/shuttingDown"
-#define MQTT_SUB_SELENE_RESPONSE	"selene/mqtt/router/seleneresponse"
-#define MQTT_SUB_SELENE_STATE_CONTROL	"selene/mqtt/device/state/control"
-#define MQTT_SUB_SELENE_CMD_HANDLE	"selene/mqtt/zwave/device/control"
-#define MQTT_SUB_DEVICE_UPDATE_REQUEST	"selene/mqtt/router/deviceupdate"
-#define MQTT_SUB_SERVICE_UPDATE_REQUEST "selene/mqtt/router/serviceupdate"
 #define MQTT_SUB_DEVICE_PROVISION_RESPONSE	"awsapp/provision/response" // For EFR32
 
-#define MQTT_PUB_DEVICE_REGISTER                "selene/mqtt/device/register"
-#define MQTT_PUB_SELENE_REQUEST                 "selene/mqtt/router/selenereq"
-#define MQTT_PUB_DEVICE_UPDATE_RESPONSE         "selene/mqtt/router/deviceupdate/response"
-#define MQTT_PUB_SERVICE_UPDATE_RESPONSE        "selene/mqtt/router/serviceupdate/response"
 #define MQTT_PUB_DISCOVERED_DEVICE              "gw/ble/discoveredDevice"
-#define MQTT_PUB_GATEWAY_CONNECT_RESPONSE       "gw/ble/gatewayConnectivity"
-#define MQTT_PUB_DEVICE_CONNECT_RESPONSE        "gw/ble/deviceConnectivity"
-#define MQTT_PUB_GATEWAY_DISCONNECT             "gw/ble/gatewayDisconnect"
 #define MQTT_PUB_REGISTER_RESPONSE              "gw/ble/registerResponse" // For EFR32
-#define MQTT_PUB_DEVICE_PROVISION	        "awsapp/provision" // For EFR32
-#define MQTT_PUB_DEVICE_DELETE                 "awsapp/delete" // For EFR32
-
-#define SELENE_GATEWAY_REGISTRATION_RESPONSE    "gateway_registration_response"
-#define SELENE_DEVICE_REGISTRATION_RESPONSE     "device_registration"
-#define SELENE_DEVICE_DELETION_RESPONSE         "device_deletion"
-#define SELENE_DEVICE_LIST_RESPONSE             "Device_List_Response"
-#define SELENE_GATEWAY_DELETION_RESPONSE        "gateway_deletion"
+#define MQTT_PUB_DEVICE_PROVISION               "awsapp/provision" // For EFR32
+#define MQTT_PUB_DEVICE_DELETE                  "awsapp/delete" // For EFR32
 
 #define LED_STATE_CONTROL_CHANNEL_1             "led1"
 #define LED_STATE_CONTROL_CHANNEL_2             "led2"
@@ -81,22 +63,31 @@
 
 #define LEDNODE_FIRMWARE_UPDATE                 "/ota-files/LedNodeFirmware"
 #define SOILNODE_FIRMWARE_UPDATE                "/ota-files/SoilNodeFirmware"
-#define FIRMWARE_VERSION_FILE                   "/home/root/CurrentFirmwareVersion"
-#define SERVICE_UPDATE_SCRIPT                   "/home/root/firmwareUpdateScript.sh"
-#define GROWHOUSE_SERVER_SERVICE                "/home/root/growhouse-server"
-#define BLE_SERVER_SERVICE                      "/home/root/ble-server"
-#define ZIGBEE_COORDINATOR_SERVICE              "/home/root/zigbeeCoordinator"
-#define MQTT_PROPERTIES_FILE                    "/opt/selene/config/devices/mqtt-router.properties"
-#define SELENE_PROPERTIES_FILE                  "/opt/selene/config/devices/self.properties"
-#define SOILNODE_SOFTWARE_PRODUCT_NAME          "GrowhouseGWSoilNode"
-#define LEDNODE_SOFTWARE_PRODUCT_NAME           "GrowhouseGWLedNode"
 #define OTA_DEVICE_LIST_FILE                    "/OTADeviceList"
+
+#define PROVISIONED_DEVICE_LIST                 "/opt/provisioned_device.json"
+#define CONFIG_FILE                             "/opt/awsapp/config.json"
+
 /*
  * Default mosquitto.conf file sets the keepalive seconds
  * to be 60, so we set the keepailve interval of 120 seconds
  */
 #define MOSQUITTO_PING_TIMEOUT 120
 #define EUI64_STRING_LENGTH    19
+
+//mosquitto handler function defination
+
+static int onDeviceListReceived(struct mosquitto *mosq, const struct mosquitto_message *message);
+static int newDeviceJoinedRequest(struct mosquitto *mosq, const struct mosquitto_message *message);
+static int onZCLResponse(struct mosquitto *mosq, const struct mosquitto_message *message);
+static int checkGatewayHeartbeat(struct mosquitto *mosq, const struct mosquitto_message *message);
+static int discoverDevices(struct mosquitto *mosq, const struct mosquitto_message *message);
+static int bleShuttingDownCallback(struct mosquitto *mosq, const struct mosquitto_message *message);
+static int registerDeviceHandler(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
+static int registerDeviceResponseHandler(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
+static int deleteDeviceHandler(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
+static int provisionSensor(struct mosquitto *mosq , const struct mosquitto_message *message); // For EFR32
+
 enum mqtt_topic {
 
 	MQTT_TYPE_MIN,
@@ -105,37 +96,27 @@ enum mqtt_topic {
 	MQTT_TYPE_HEARTBEAT,
 	MQTT_TYPE_DEVICES,
 	MQTT_TYPE_DISCOVER_COMMAND,
-	MQTT_TYPE_PROVISIONED_DEVICE,
 	MQTT_TYPE_BLE_SHUTTING_DOWN,
-	MQTT_TYPE_SELENE_RESPONSE,
-	MQTT_TYPE_SELENE_STATE_CONTROL,
-	MQTT_TYPE_SELENE_CMD_HANDLE,
-	MQTT_TYPE_DEVICE_UPDATE_REQUEST,
-	MQTT_TYPE_SERVICE_UPDATE_REQUEST,
 	MQTT_TYPE_DEVICE_REGISTER, // For EFR32
 	MQTT_TYPE_DEVICE_REGISTER_RESPONSE, // For EFR32
 	MQTT_TYPE_DEVICE_DELETE, // For EFR32
+	MQTT_TYPE_PROVISION_SENSOR, // For EFR32
 	MQTT_TYPE_MAX
 
 };
 
-const char * mqtt_topic_subscribe [] = {
+static const char * mqtt_topic_subscribe [] = {
 
 	[MQTT_TYPE_DEVICE_JOINED] = MQTT_SUB_DEVICE_JOINED,
 	[MQTT_TYPE_ZCL_RESPONSE] = MQTT_SUB_ZCL_RESPONSE,
 	[MQTT_TYPE_HEARTBEAT] = MQTT_SUB_HEARTBEAT,
 	[MQTT_TYPE_DEVICES] = MQTT_SUB_DEVICES,
 	[MQTT_TYPE_DISCOVER_COMMAND] = MQTT_SUB_DISCOVER_COMMAND,
-	[MQTT_TYPE_PROVISIONED_DEVICE] = MQTT_SUB_PROVISIONED_DEVICE,
 	[MQTT_TYPE_BLE_SHUTTING_DOWN] = MQTT_SUB_BLE_SHUTTING_DOWN,
-	[MQTT_TYPE_SELENE_RESPONSE] = MQTT_SUB_SELENE_RESPONSE,
-	[MQTT_TYPE_SELENE_STATE_CONTROL] = MQTT_SUB_SELENE_STATE_CONTROL,
-	[MQTT_TYPE_SELENE_CMD_HANDLE] = MQTT_SUB_SELENE_CMD_HANDLE,
-	[MQTT_TYPE_DEVICE_UPDATE_REQUEST] = MQTT_SUB_DEVICE_UPDATE_REQUEST,
-	[MQTT_TYPE_SERVICE_UPDATE_REQUEST] = MQTT_SUB_SERVICE_UPDATE_REQUEST,
 	[MQTT_TYPE_DEVICE_REGISTER] = MQTT_SUB_REGISTER_COMMAND, // For EFR32
 	[MQTT_TYPE_DEVICE_REGISTER_RESPONSE] = MQTT_SUB_DEVICE_PROVISION_RESPONSE, // For EFR32
-        [MQTT_TYPE_DEVICE_DELETE] = MQTT_SUB_DELETE_COMMAND // For EFR32
+	[MQTT_TYPE_DEVICE_DELETE] = MQTT_SUB_DELETE_COMMAND, // For EFR32
+	[MQTT_TYPE_PROVISION_SENSOR] = MQTT_SUB_PROVISION_SENSOR, // For EFR32
 };
 
 typedef struct mosquitto_message_handler {
@@ -151,30 +132,22 @@ static const MOSQUITTO_MSG_HANDLER mosquitto_message_handler_array[] = {
 		.handler = &onDeviceListReceived },
 	{ .mosquitto_topic = (int *) MQTT_SUB_DEVICE_JOINED ,
 		.handler = &newDeviceJoinedRequest },
-	{ .mosquitto_topic = (int *) MQTT_SUB_PROVISIONED_DEVICE,
-		.handler = &provisionDevice },
 	{ .mosquitto_topic = (int *) MQTT_SUB_ZCL_RESPONSE,
 		.handler = &onZCLResponse },
 	{ .mosquitto_topic = (int *) MQTT_SUB_HEARTBEAT ,
 		.handler = &checkGatewayHeartbeat },
 	{ .mosquitto_topic = (int *) MQTT_SUB_DISCOVER_COMMAND,
 		.handler = &discoverDevices },
-	{ .mosquitto_topic = (int *) MQTT_SUB_SELENE_RESPONSE ,
-		.handler = &checkSeleneResponse },
-	{ .mosquitto_topic = (int *) MQTT_SUB_SELENE_STATE_CONTROL,
-		.handler = &deviceStateControl },
 	{ .mosquitto_topic = (int *) MQTT_SUB_BLE_SHUTTING_DOWN,
 		.handler = &bleShuttingDownCallback },
-	{ .mosquitto_topic = (int *) MQTT_SUB_SELENE_CMD_HANDLE,
-		.handler = &seleneCommandHandler },
-	{ .mosquitto_topic = (int *) MQTT_SUB_DEVICE_UPDATE_REQUEST,
-		.handler = &deviceUpdateHandler },
 	{ .mosquitto_topic = (int *) MQTT_SUB_REGISTER_COMMAND,
 		.handler = &registerDeviceHandler },
 	{ .mosquitto_topic = (int *) MQTT_SUB_DEVICE_PROVISION_RESPONSE,
 		.handler = &registerDeviceResponseHandler },
 	{ .mosquitto_topic = (int *) MQTT_SUB_DELETE_COMMAND,
-                .handler = &deleteDeviceHandler }
+		.handler = &deleteDeviceHandler },
+	{ .mosquitto_topic = (int *) MQTT_SUB_PROVISION_SENSOR,
+		.handler = &provisionSensor },
 };
 
 enum led_state_control {
@@ -189,7 +162,7 @@ enum led_state_control {
 	LED_CHANNEL_MAX
 };
 
-const char * led_state_control_array [] = {
+static const char * led_state_control_array [] = {
 
 	[LED_CHANNEL_1] = LED_STATE_CONTROL_CHANNEL_1,
 	[LED_CHANNEL_2] = LED_STATE_CONTROL_CHANNEL_2,
@@ -219,7 +192,7 @@ enum led_RGB_control {
 	NC = 78
 };
 
-const char * led_RGB_control_array[] = {
+static const char * led_RGB_control_array[] = {
 	[R] = LED_RED_CONTROL,
 	[G] = LED_GREEN_CONTROL,
 	[B] = LED_BLUE_CONTROL,
@@ -239,41 +212,12 @@ const char * led_RGB_control_array[] = {
 	[NC] = LED_NOT_CONNECTED
 };
 
-typedef struct led_config {
-        char * type;
-        char key;
-
-}LED_CHANNEL_TYPES;
-
-LED_CHANNEL_TYPES led_channel_types[] = {
-
-        { LED_RED_CONTROL          , 'R' },
-        { LED_GREEN_CONTROL        , 'G' },
-        { LED_BLUE_CONTROL         , 'B' },
-        { LED_COOL_WHITE_CONTROL   , 'a' },
-        { LED_NEUTRAL_WHITE_CONTROL, 'b' },
-        { LED_WARM_WHITE_W_CONTROL , 'c' },
-        { LED_UV_A_CONTROL         , 'd' },
-        { LED_UV_B_CONTROL         , 'e' },
-        { LED_UV_C_CONTROL         , 'f' },
-        { LED_ROYAL_BLUE_CONTROL   , 'g' },
-        { LED_YELLOW_CONTROL       , 'h' },
-        { LED_AMBER_CONTROL        , 'i' },
-        { LED_ORANGE_CONTROL       , 'j' },
-        { LED_DEEP_RED_CONTROL     , 'k' },
-        { LED_FAR_RED_CONTROL      , 'l' },
-        { LED_IR_CONTROL           , 'm' },
-        { LED_NOT_CONNECTED        , 'N' },
-};
-
 /*
  * Total number of function handler
  */
 #define NUMBER_OF_FUNCTION  sizeof(mosquitto_message_handler_array)/sizeof(MOSQUITTO_MSG_HANDLER)
 
 /****************************** End Definations ******************************/
-
-/****************************** Global Declaration ***************************/
 
 // Global Maintain all joined device list
 cJSON *root = NULL;
@@ -282,34 +226,30 @@ cJSON *root = NULL;
 cJSON * provisionedDeviceList = NULL;
 
 // store Firmware verison of endDevice
-cJSON * deviceFirmwareVersionList = NULL;
+static cJSON * deviceFirmwareVersionList = NULL;
 
 // store Firmware update request for devices
-cJSON * deviceUpdateRequestList = NULL;
-cJSON * LednodeUpdate = NULL;
-cJSON * SoilnodeUpdate = NULL;
+static cJSON * deviceUpdateRequestList = NULL;
+static cJSON * LednodeUpdate = NULL;
+static cJSON * SoilnodeUpdate = NULL;
 
-char * gatewayEui64 = NULL;
+static char * gatewayEui64 = NULL;
 
-char * deviceListCommand = "{\"type\" : \"Device_List\"}";
-char * openNetworkCommand =  "{\"commands\":[{\"command\":\"plugin network-creator-security open-network\",\"postDelayMs\":100}]}";
-char * closeNetworkCommand =  "{\"commands\":[{\"command\":\"plugin network-creator-security close-network\",\"postDelayMs\":100}]}";
-char * gatewayConnectivitySuccess =  "{\"gatewayConnectivity\":\"true\"}";
-char * gatewayConnectivityError =  "{\"gatewayConnectivity\":\"false\"}";
+static const char * deviceListCommand = "{\"type\" : \"Device_List\"}";
+static const char * openNetworkCommand =  "{\"commands\":[{\"command\":\"plugin network-creator-security open-network\",\"postDelayMs\":100}]}";
+static const char * closeNetworkCommand =  "{\"commands\":[{\"command\":\"plugin network-creator-security close-network\",\"postDelayMs\":100}]}";
+static const char * gatewayConnectivityError =  "{\"gatewayConnectivity\":\"false\"}";
 
 // Mutex lock
-pthread_mutex_t lock;
-pthread_mutex_t provision_lock;
-int LednodeUpdateCount;
-int SoilnodeUpdateCount;
+static pthread_mutex_t lock;
+static pthread_mutex_t provision_lock;
+static int LednodeUpdateCount;
+static int SoilnodeUpdateCount;
 
-int gatewayConnectivity = 0;
-int provisionInprogress = 0;
+static int provisionInprogress = 0;
 struct mosquitto *mosq = NULL;
 
-/*************************** End Global Declaration ***************************/
-
-/************************* functions ******************************************/
+static void init_provisioned_device_list(void);
 
 /* connect_callback()
  *
@@ -321,7 +261,7 @@ struct mosquitto *mosq = NULL;
  *
  * \return none
  */
-void connect_callback(struct mosquitto *mosq, void *obj, int result)
+static void connect_callback(struct mosquitto *mosq, void *obj, int result)
 {
 	int l_count = 0;
 	int status = MOSQ_ERR_INVAL;
@@ -345,13 +285,7 @@ void connect_callback(struct mosquitto *mosq, void *obj, int result)
 		}
 		logBtGattInfo ("Subscribe to topic : %s\n",mqtt_topic_subscribe[l_count]);
 	}
-	// Request selene to provide already provisioned device list
-	status = mosquitto_publish(mosq, NULL, MQTT_PUB_SELENE_REQUEST, strlen(deviceListCommand), deviceListCommand, 1, false);
-	if ( status != MOSQ_ERR_SUCCESS){
-		logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_SELENE_REQUEST, status);
-		return;
-	}
-	logBtGattInfo ("Successfully publish payload to get deviceList from selene on topic %s\n", MQTT_PUB_SELENE_REQUEST);
+	init_provisioned_device_list();
 }
 
 /* attributeDataToSigned()
@@ -405,7 +339,7 @@ static unsigned long long l2b_endian (unsigned long long data, unsigned int len_
  *
  * \return : If endpoint is supported then return true else false.
  */
-bool isEndpointSupported ( cJSON * node )
+static bool isEndpointSupported ( cJSON * node )
 {
 	if (node == NULL) {
 		logBtGattErr ("Failed to parse json\n");
@@ -428,7 +362,7 @@ bool isEndpointSupported ( cJSON * node )
  *
  * \return : If device state is supported then return true else false.
  */
-bool isDeviceDisplayable(cJSON * node) {
+static bool isDeviceDisplayable(cJSON * node) {
 
 	if (node == NULL) {
 		logBtGattErr ("Failed to parse json\n");
@@ -451,7 +385,7 @@ bool isDeviceDisplayable(cJSON * node) {
  *
  * \return : If device is sleepy then return true else false.
  */
-bool isSleepyDevice (cJSON * node) {
+static bool isSleepyDevice (cJSON * node) {
 
 	int deviceType;
 
@@ -481,10 +415,11 @@ bool isSleepyDevice (cJSON * node) {
  *
  * \return : If device is support relay then return true else false.
  */
-bool isRelaySupported ( int deviceType ) {
+static bool isRelaySupported ( int deviceType ) {
 
 	return (deviceType == DEVICE_TYPE_CONTACT_SENSOR ||
-			deviceType == DEVICE_TYPE_OCCUPANCY_SENSOR) ? false : true;
+			deviceType == DEVICE_TYPE_OCCUPANCY_SENSOR ||
+			deviceType == DEVICE_ID_TEMPERATURE_SENSOR) ? false : true;
 
 }
 
@@ -496,7 +431,7 @@ bool isRelaySupported ( int deviceType ) {
  *
  * \return none
  */
-void growhouseCleanup(struct mosquitto *mosq) {
+static void growhouseCleanup(struct mosquitto *mosq) {
 
 	logBtGattInfo ("Growhouse service Cleanup function called\n");
 	mosquitto_disconnect(mosq);
@@ -508,6 +443,9 @@ void growhouseCleanup(struct mosquitto *mosq) {
 
 	if ( provisionedDeviceList != NULL )
 		cJSON_Delete(provisionedDeviceList);
+
+	if (access(PROVISIONED_DEVICE_LIST, F_OK) != 0)
+		remove(PROVISIONED_DEVICE_LIST);
 
 	if ( deviceFirmwareVersionList != NULL)
 		cJSON_Delete(deviceFirmwareVersionList);
@@ -523,7 +461,7 @@ void growhouseCleanup(struct mosquitto *mosq) {
  *
  * \return none
  */
-void printAllDeviceList() {
+static void printAllDeviceList() {
 
 	char * ptr = NULL;
 	ptr = cJSON_PrintUnformatted(root);
@@ -541,7 +479,7 @@ void printAllDeviceList() {
  *
  * \return none
  */
-void printProvisionedDeviceList() {
+static void printProvisionedDeviceList() {
 
 	char * ptr = NULL;
 	ptr = cJSON_PrintUnformatted(provisionedDeviceList);
@@ -551,6 +489,122 @@ void printProvisionedDeviceList() {
 		logBtGattInfo("Provisioned device list :: %s\n", ptr);
 		free (ptr);
 	}
+}
+
+/* init_provisioned_device_list()
+ *
+ * \brief : this routine initialize list of devices which are provisioned.
+ *
+ * \return none
+ */
+static void init_provisioned_device_list(void)
+{
+	logBtGattInfo ("Initialize provisioned device list\n");
+	if (access(PROVISIONED_DEVICE_LIST, F_OK) == 0) {
+		char *provisionFileStr = NULL;
+		long provisionFileSize = 0;
+		FILE *provisionFile = fopen(PROVISIONED_DEVICE_LIST, "r");
+		if (provisionFile != NULL) {
+			fseek(provisionFile, 0, SEEK_END);
+			provisionFileSize = ftell(provisionFile);
+			fseek(provisionFile, 0, SEEK_SET);
+			provisionFileStr = calloc(provisionFileSize + 1, sizeof(char));
+			if (provisionFileStr != NULL) {
+				if (provisionFileSize == fread(provisionFileStr, sizeof(char),
+							provisionFileSize, provisionFile)) {
+					provisionedDeviceList = cJSON_Parse(provisionFileStr);
+				} else {
+					logBtGattErr ("Failed to read from %s\n", PROVISIONED_DEVICE_LIST);
+				}
+				free(provisionFileStr);
+			} else {
+				logBtGattErr ("Failed to create string memory\n");
+			}
+			fclose(provisionFile);
+		} else {
+			logBtGattErrUsingErrNo ("Failed to open file %s", PROVISIONED_DEVICE_LIST);
+		}
+	} else {
+		provisionedDeviceList = cJSON_CreateArray();
+	}
+	printProvisionedDeviceList();
+}
+
+/* save_provisioned_device_list()
+ *
+ * \brief : this routine save list of devices which are provisioned to file.
+ *
+ * \return none
+ */
+static void save_provisioned_device_list(void)
+{
+	char * ptr = NULL;
+
+	logBtGattInfo ("Save provisioned device list\n");
+	ptr = cJSON_PrintUnformatted(provisionedDeviceList);
+	if (ptr == NULL ) {
+		logBtGattErr ("Failed to parse json\n");
+	} else {
+		FILE *provisionFile = fopen(PROVISIONED_DEVICE_LIST, "w");
+		size_t provisionFileSize = strlen(ptr);
+		logBtGattInfo("Provisioned device list :: %s\n", ptr);
+		if (provisionFile != NULL) {
+			if (provisionFileSize != fwrite(ptr, sizeof(char),
+						provisionFileSize, provisionFile)) {
+				logBtGattErr ("Failed to read from %s\n", PROVISIONED_DEVICE_LIST);
+			}
+			fflush(provisionFile);
+			fclose(provisionFile);
+		} else {
+			logBtGattErrUsingErrNo ("Failed to open file %s", PROVISIONED_DEVICE_LIST);
+		}
+		free (ptr);
+	}
+}
+
+/* is_gateway_provisioned()
+ *
+ * \brief : this routine checks that gateway is provisioned with the cloud or not.
+ *
+ * \return true if gateway is provisioned, false if not provisioned
+ */
+static bool is_gateway_provisioned(void)
+{
+	bool isProvisioned = false;
+	logBtGattInfo ("Check if gateway is provisioned\n");
+	if (access(CONFIG_FILE, F_OK) == 0) {
+		char *configFileString = NULL;
+		long configFileSize = 0;
+		FILE *configFile = fopen(CONFIG_FILE, "r");
+		if (configFile != NULL) {
+			char *provisionStr = NULL;
+			cJSON * gwConfigObj = NULL;
+			fseek(configFile, 0, SEEK_END);
+			configFileSize = ftell(configFile);
+			fseek(configFile, 0, SEEK_SET);
+			configFileString = calloc(configFileSize + 1, sizeof(char));
+			if (configFileString != NULL) {
+				if (configFileSize == fread(configFileString, sizeof(char),
+							configFileSize, configFile)) {
+					gwConfigObj = cJSON_Parse(configFileString);
+					provisionStr = cJSON_GetObjectItem(gwConfigObj, "provisioned")->valuestring;
+					logBtGattErr ("provisioned value in config : %s\n", provisionStr);
+					if (0 == strcmp(provisionStr, "true")) {
+						isProvisioned = true;
+					}
+				} else {
+					logBtGattErr ("Failed to read from %s\n", CONFIG_FILE);
+				}
+				free(configFileString);
+			} else {
+				logBtGattErr ("Failed to create string memory\n");
+			}
+			fclose(configFile);
+		} else {
+			logBtGattErrUsingErrNo ("Failed to open file %s", CONFIG_FILE);
+		}
+	}
+	return isProvisioned;
 }
 
 /* addDeviceToOtaDeviceList()
@@ -563,7 +617,7 @@ void printProvisionedDeviceList() {
  *
  * \return 0 on success, -1 on failure
  */
-int addDeviceToOtaDeviceList(struct mosquitto * mosq, char * eui64String) {
+static int addDeviceToOtaDeviceList(struct mosquitto * mosq, char * eui64String) {
 
 	int status = MOSQ_ERR_INVAL;
 	char command[256] = {0};
@@ -602,7 +656,7 @@ int addDeviceToOtaDeviceList(struct mosquitto * mosq, char * eui64String) {
  *
  * \return 0 on success, -1 on failure
  */
-int removeDeviceFromOtaDeviceList(struct mosquitto * mosq, char * eui64String) {
+static int removeDeviceFromOtaDeviceList(struct mosquitto * mosq, char * eui64String) {
 
 	int status = MOSQ_ERR_INVAL;
 	char command[256] = {0};
@@ -643,81 +697,18 @@ int removeDeviceFromOtaDeviceList(struct mosquitto * mosq, char * eui64String) {
 	return 0;
 }
 
-/* sendFirmwareUpdateResponseToSelene()
- *
- * \brief : this routine send response to selene for firmware update
- *          and delete device from array of device list for firmware update.
- *
- * \param [in] mosq     : Pointer to instance of mosquitto.
- * \param [in] eui64    : Device uniq qui64 string.
- * \param [in] result   : Either success of failure string.
- * \param [in] message  : Message string for firmware update status.
- *
- * \return none
- */
-void sendFirmwareUpdateResponseToSelene(struct mosquitto * mosq, char * eui64, char * result, char * message) {
-
-	int l_count = 0;
-	int status = MOSQ_ERR_INVAL;
-	char * deviceUpdateEui64 = NULL;
-	cJSON * device = NULL;
-	char * ptr = NULL;
-
-	/* send response to selene*/
-	cJSON * response = cJSON_CreateObject();
-	cJSON_AddStringToObject(response, "deviceUid", eui64);
-	cJSON_AddStringToObject(response, "result", result);
-	cJSON_AddStringToObject(response, "message", message);
-
-	ptr = cJSON_PrintUnformatted(response);
-	if (ptr == NULL ) {
-		logBtGattErr ("Failed to parse json\n");
-		cJSON_Delete(response);
-		return;
-	}
-	status = mosquitto_publish(mosq, NULL, MQTT_PUB_DEVICE_UPDATE_RESPONSE, strlen(ptr), ptr, 1, false);
-	if ( status != MOSQ_ERR_SUCCESS){
-		logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_DEVICE_UPDATE_RESPONSE, status);
-	} else {
-		logBtGattInfo ("Successfully publish payload \"%s\" to selene on topic %s\n", ptr, MQTT_PUB_DEVICE_UPDATE_RESPONSE);
-	}
-	free (ptr);
-	cJSON_Delete(response);
-
-	/* Remove entry from firmware update request list */
-	for (l_count = 0; l_count < cJSON_GetArraySize(deviceUpdateRequestList); l_count++) {
-
-		device = cJSON_GetArrayItem(deviceUpdateRequestList, l_count);
-		deviceUpdateEui64 = cJSON_GetObjectItem(device, "eui64")->valuestring;
-		if ( !strncmp(eui64, deviceUpdateEui64, strlen(deviceUpdateEui64))) {
-			/* Remove device from array of device update request */
-			logBtGattInfo (" Remove device %s from the list\n", deviceUpdateEui64);
-			cJSON_DeleteItemFromArray(deviceUpdateRequestList, l_count);
-		}
-		break;
-	}
-	ptr = cJSON_PrintUnformatted(deviceUpdateRequestList);
-	if (ptr == NULL ) {
-		logBtGattErr ("Failed to parse json\n");
-		return;
-	} else {
-		logBtGattInfo ("Updated Device list for firmware update request == %s\n", ptr);
-		free(ptr);
-	}
-}
-
 /* updateEndDeviceFirmware()
  *
  * \brief : this routine is called when Firmware update is initiated from cloud.
- *          Copy file from selene database to /ota-files directory and send
+ *          Copy file to /ota-files directory and send
  *          command to zigbee coordinator to reload firmware file.
  *
  * \param [in] mosq    : Pointer to instance of mosquitto.
- * \param [in] node    : Payload received from selene
+ * \param [in] node    : Payload received from cloud
  *
  * \return 0 on success, -1 on failure
  */
-int updateEndDeviceFirmware(struct mosquitto *mosq, cJSON * node) {
+static int updateEndDeviceFirmware(struct mosquitto *mosq, cJSON * node) {
 
 	int src_fd, dst_fd, n, err;
 	int version = 0;
@@ -775,7 +766,8 @@ int updateEndDeviceFirmware(struct mosquitto *mosq, cJSON * node) {
 			/* If version is same then return from here with success Message */
 			if ( deviceVersion == version ) {
 				logBtGattInfo ("Device is running on same Firmware version\n");
-				sendFirmwareUpdateResponseToSelene(mosq, deviceEui64String, "success", "Device is running on same Firmware version");
+				// TODO
+				// Send the response
 				/* Remove file from system */
 				if( access(filePath, F_OK ) != -1 )
 					remove (filePath);
@@ -848,7 +840,7 @@ int updateEndDeviceFirmware(struct mosquitto *mosq, cJSON * node) {
 		strncpy(dst_path, SOILNODE_FIRMWARE_UPDATE, strlen(SOILNODE_FIRMWARE_UPDATE));
 	}
 
-	/* Copy file from selene directory to /ota-files */
+	/* Copy file to /ota-files */
 	src_fd = open(filePath, O_RDONLY);
 	dst_fd = open(dst_path, O_CREAT | O_WRONLY);
 
@@ -903,182 +895,155 @@ int updateEndDeviceFirmware(struct mosquitto *mosq, cJSON * node) {
 	return 0;
 }
 
-
-/* sendServiceUpdateResponseToSelene()
- *
- * \brief : this routine send response to selene for firmware update
- *          of gateway services in case of successor failure.
- *
- * \param [in] mosq     : Pointer to instance of mosquitto.
- * \param [in] result   : Either success of failed string.
- * \param [in] message  : Message string for firmware update status.
- *
- * \return none
- */
-void sendServiceUpdateResponseToSelene(struct mosquitto * mosq, char * result, char * message) {
+static int registerDeviceHandler(struct mosquitto *mosq, const struct mosquitto_message *message) {
 
 	int status = MOSQ_ERR_INVAL;
-	char * ptr = NULL;
+	const char * mqttTopic = MQTT_PUB_DEVICE_PROVISION;
+	cJSON * request = NULL;
+	int provisionDeviceCount;
+	int l_count;
+	bool isSensorProvision = false;
 
-	/* send response to selene*/
-	cJSON * response = cJSON_CreateObject();
-	cJSON_AddStringToObject(response, "result", result);
-	cJSON_AddStringToObject(response, "message", message);
-	ptr = cJSON_PrintUnformatted(response);
-	if (ptr == NULL ) {
+	logBtGattInfo ("Provisioning request from mobile application. %s\n",
+			message->payload);
+	request = cJSON_Parse(message->payload);
+	if ( request == NULL ) {
 		logBtGattErr ("Failed to parse json\n");
-		cJSON_Delete(response);
-		return;
-	}
-	status = mosquitto_publish(mosq, NULL, MQTT_PUB_SERVICE_UPDATE_RESPONSE, strlen(ptr), ptr, 1, false);
-	if ( status != MOSQ_ERR_SUCCESS){
-		logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_SERVICE_UPDATE_RESPONSE, status);
-	} else {
-		logBtGattInfo ("Successfully publish payload \"%s\" to selene on topic %s\n", ptr, MQTT_PUB_SERVICE_UPDATE_RESPONSE);
-	}
-	free(ptr);
-	cJSON_Delete(response);
-}
-
-/* updateGatewayServices()
- *
- * \brief : this routine is called when Firmware update is initiated from cloud.
- *          extract file from selene database to /home/root directory and initiate
- *          script to update gateway services.
- *
- * \param [in] mosq    : Pointer to instance of mosquitto.
- * \param [in] node    : Payload received from selene
- *
- * \return 0 on success, -1 on failure
- */
-int updateGatewayServices(struct mosquitto *mosq, cJSON * node) {
-
-	int version = 0;
-	int childpid = 0;
-	char path[256] = {0};
-	char * filePath = NULL;
-	char * ret = NULL;
-	char src_path[256] = {0};
-	FILE *fp = NULL;
-	char * firmwareUpdateScript[] = {"sh", SERVICE_UPDATE_SCRIPT, NULL};
-
-	logBtGattInfo (" Received update for growhouse services\n");
-
-	/* Check if provisioning is in progress then restrict to firmware update */
-	if ( provisionInprogress == 1 ) {
-		logBtGattInfo ("Device provisioning is in progress");
 		return -1;
 	}
-
-	filePath = cJSON_GetObjectItem(node, "filePath")->valuestring;
-	strncpy(src_path, filePath, strlen(filePath));
-	logBtGattInfo ("Firmware File == %s\n", filePath);
-
-	/* Check if file is available or not */
-	if( access(filePath, F_OK ) == -1 ) {
-		logBtGattInfo ("%s is not avilable", filePath);
-		return -1;
-	}
-
-	/* Check if filename format is match */
-	if (strstr(basename(src_path),"Gateway_services_v") == NULL ) {
-		logBtGattErr ("Filename format is wrong\n");
-		return -1;
-	}
-
-	ret = strstr(strtok(basename(src_path), "."),"_v");
-	if ( ret == NULL ) {
-		logBtGattErr("Failed to parse firmware version\n");
-		return -1;
-	}
-	version = atoi (&ret[2]);
-	logBtGattInfo ("Received firmware version = %d\n", version);
-
-	/* Compare current firmware version with new firmware version received */
-	if ( GROWHOUSE_SERVICE_VERSION == version) {
-		logBtGattInfo ("Services running on same firmware version\n");
-		sendServiceUpdateResponseToSelene(mosq, "success", "Services running on same firmware version");
-		return 0;
-	}
-
-	/* untar file to specific directory */
-	sprintf ( path,"/bin/tar -xvf %s -C /home/root/", filePath);
-	logBtGattInfo ("command == %s\n",path);
-	if( fp = popen(path, "w") )
-	{
-		pclose(fp);
-	} else {
-		logBtGattErr("Failed to untar gateway services file");
-		return -1;
-	}
-
-	/* Remove file from system */
-	if( access(filePath, F_OK ) != -1 )
-		remove(filePath);
-
-	/* Check if all the files is availbale or not for service update */
-	if ( (access(SERVICE_UPDATE_SCRIPT, F_OK ) == -1 ) || (access(GROWHOUSE_SERVER_SERVICE, F_OK ) == -1 )
-			|| (access(BLE_SERVER_SERVICE, F_OK ) == -1 ) || (access(ZIGBEE_COORDINATOR_SERVICE, F_OK ) == -1 )) {
-		logBtGattErr("All service file is not available for firmware update");
-		return -1;
-	}
-	/* Run firmware update script to update all gateway services */
-	if((childpid = fork()) == -1 )
-	{
-		logBtGattErr("Failed to fork");
-		return -1;
-	}
-	else if(childpid == 0)
-	{
-		if( access(SERVICE_UPDATE_SCRIPT, F_OK ) != -1 ) {
-
-			/* Cleanup memory */
-			growhouseCleanup(mosq);
-
-			if ( (execv("/bin/sh", firmwareUpdateScript)) == -1) {
-				logBtGattErr ("Failed to run service update script\n");
-				return -1;
-                        } else {
-				logBtGattInfo ("Successfully execute service update script\n");
-			}
-
-		} else {
-			logBtGattErr ("Service update file is not available\n");
-			return -1;
+	provisionDeviceCount = cJSON_GetArraySize(request);
+	for (l_count = 0 ; l_count < provisionDeviceCount; l_count++) {
+		cJSON * deviceObject = cJSON_GetArrayItem(request, l_count);
+		cJSON *devicetype = cJSON_GetObjectItem(deviceObject, "deviceType");
+		if (cJSON_IsString(devicetype) && (devicetype->valuestring != NULL)
+				&& (0 == strcmp(devicetype->valuestring, "sentimate"))) {
+			isSensorProvision = true;
+			break;
 		}
-        }
-	return 0;
-}
-
-int registerDeviceHandler(struct mosquitto *mosq, const struct mosquitto_message *message) {
-
-	int status = MOSQ_ERR_INVAL;
-        char mqttTopic[32] = {0};
-
-        status = mosquitto_publish(mosq, NULL, MQTT_PUB_DEVICE_PROVISION, strlen(message->payload), (char *)message->payload, 1, false);
-        if ( status != MOSQ_ERR_SUCCESS){
-	                logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_DEVICE_PROVISION, status);
-		                return -1;
 	}
-        logBtGattInfo ("Successfully publish register devices payload \"%s\" on topic %s\n", message->payload, MQTT_PUB_DEVICE_PROVISION);
 
-        return status;
-}
-int registerDeviceResponseHandler(struct mosquitto *mosq, const struct mosquitto_message *message) {
+	if (!isSensorProvision && is_gateway_provisioned()) {
+		const char * gatewayFailResponse = "{\"result\" : \"fail\", \"statusMessage\" : \"Gateway is already provisioned\"}";
+		status = mosquitto_publish(mosq, NULL, MQTT_PUB_REGISTER_RESPONSE,
+				strlen(gatewayFailResponse), gatewayFailResponse, 1, false);
+		if (status != MOSQ_ERR_SUCCESS) {
+			logBtGattErr("could not publish to topic:%s err:%d",
+					MQTT_PUB_REGISTER_RESPONSE, status);
+		} else {
+			logBtGattInfo ("Successfully publish device registration response payload \"%s\" on topic %s\n",
+					gatewayFailResponse, MQTT_PUB_REGISTER_RESPONSE);
+		}
+		return status;
+	}
 
-	int status = MOSQ_ERR_INVAL;
-	char mqttTopic[32] = {0};
+	if (isSensorProvision && !is_gateway_provisioned()) {
+		const char * sensorFailResponse = "{\"result\" : \"fail\", \"statusMessage\" : \"Gateway needs to be provisioned first\"}";
+		status = mosquitto_publish(mosq, NULL, MQTT_PUB_REGISTER_RESPONSE,
+				strlen(sensorFailResponse), sensorFailResponse, 1, false);
+		if (status != MOSQ_ERR_SUCCESS) {
+			logBtGattErr("could not publish to topic:%s err:%d",
+					MQTT_PUB_REGISTER_RESPONSE, status);
+		} else {
+			logBtGattInfo ("Successfully publish device registration response payload \"%s\" on topic %s\n",
+					sensorFailResponse, MQTT_PUB_REGISTER_RESPONSE);
+		}
+		return status;
+	}
 
-	status = mosquitto_publish(mosq, NULL, MQTT_PUB_REGISTER_RESPONSE, strlen(message->payload), message->payload, 1, false);
-	if ( status != MOSQ_ERR_SUCCESS){
-		logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_REGISTER_RESPONSE, status);
+	if (isSensorProvision) {
+		mqttTopic = MQTT_SUB_PROVISION_SENSOR;
+	}
+
+	status = mosquitto_publish(mosq, NULL, mqttTopic,
+			strlen(message->payload), (char *)message->payload,
+			1, false);
+	if (status != MOSQ_ERR_SUCCESS) {
+		logBtGattErr("could not publish to topic:%s err:%d",
+				mqttTopic, status);
 		return -1;
 	}
-	logBtGattInfo ("Successfully publish register devices payload \"%s\" on topic %s\n", message->payload, MQTT_PUB_REGISTER_RESPONSE);
+	logBtGattInfo ("Successfully publish register devices payload \"%s\" on topic %s\n",
+			message->payload, mqttTopic);
 
 	return status;
 }
-int deleteDeviceHandler(struct mosquitto *mosq, const struct mosquitto_message *message) {
+
+static int registerDeviceResponseHandler(struct mosquitto *mosq, const struct mosquitto_message *message) {
+
+	int status = MOSQ_ERR_INVAL;
+
+	if ( provisionInprogress == 1 ) {
+		cJSON * response = NULL;
+		bool deviceAlreadyProvisioned = false;
+		logBtGattInfo ("Device provisioning is in progress");
+		logBtGattInfo ("Got response for device. %s\n", message->payload);
+		response = cJSON_Parse(message->payload);
+		if ( response == NULL ) {
+			logBtGattErr ("Failed to parse json\n");
+			return -1;
+		}
+		cJSON *result = cJSON_GetObjectItem(response, "result");
+		if (cJSON_IsString(result) && (result->valuestring != NULL)
+				&& (0 == strcasecmp(result->valuestring, "success"))) {
+			struct timeval tv;
+			char * eui64String = cJSON_GetObjectItem(response, "eui64")->valuestring;
+			gettimeofday(&tv, NULL);
+			cJSON * provisionDevice = cJSON_CreateObject();
+			cJSON_AddStringToObject(provisionDevice, "deviceUid", eui64String);
+			cJSON_AddNumberToObject(provisionDevice, "timestamp", tv.tv_sec);
+			cJSON_AddBoolToObject(provisionDevice, "status", true);
+
+			char * ptr = NULL;
+			ptr = cJSON_PrintUnformatted(provisionDevice);
+			if (ptr == NULL) {
+				logBtGattErr("Failed to parse json\n");
+			} else {
+				logBtGattInfo("New Provision device :: %s\n", ptr);
+				free (ptr);
+				ptr = NULL;
+			}
+
+			/* Check if device is already provisioned or not. If device is
+			 * already provisioned then do not add into provisioned Device list
+			 */
+			for (int l_count = 0; l_count < cJSON_GetArraySize(provisionedDeviceList); l_count++) {
+
+				cJSON *provisionedDeviceObject = cJSON_GetArrayItem(provisionedDeviceList, l_count);
+				char * provisionedEui64String = cJSON_GetObjectItem(provisionedDeviceObject, "deviceUid")->valuestring;
+				if (!strncmp (eui64String, provisionedEui64String, strlen(provisionedEui64String))) {
+					deviceAlreadyProvisioned = true;
+					break;
+				}
+			}
+			/* Add device to provisioned device list*/
+			if (!deviceAlreadyProvisioned) {
+				cJSON_AddItemToArray(provisionedDeviceList, provisionDevice);
+				save_provisioned_device_list();
+			}
+
+			printProvisionedDeviceList();
+
+			pthread_mutex_unlock(&provision_lock);
+		} else {
+			logBtGattInfo("Get device registration failed. Remove device from network and send failed to ble app\n");
+		}
+		cJSON_Delete(response);
+	}
+
+	status = mosquitto_publish(mosq, NULL, MQTT_PUB_REGISTER_RESPONSE,
+			message->payloadlen, message->payload, 1, false);
+	if (status != MOSQ_ERR_SUCCESS) {
+		logBtGattErr("could not publish to topic:%s err:%d",
+				MQTT_PUB_REGISTER_RESPONSE, status);
+	} else {
+		logBtGattInfo ("Successfully publish device registration response payload \"%s\" on topic %s\n",
+				(char *)message->payload, MQTT_PUB_REGISTER_RESPONSE);
+	}
+
+	return status;
+}
+
+static int deleteDeviceHandler(struct mosquitto *mosq, const struct mosquitto_message *message) {
 
 	int status = MOSQ_ERR_INVAL;
 	char mqttTopic[32] = {0};
@@ -1092,62 +1057,6 @@ int deleteDeviceHandler(struct mosquitto *mosq, const struct mosquitto_message *
 
 	return status;
 }
-/* deviceUpdateHandler()
- *
- * \brief : this routine is called when Firmware update is initiated from cloud.
- *
- * \param [in] mosq    : Pointer to instance of mosquitto.
- * \param [in] message : Pointer to instance of mosquitto message.
- *
- * \return : 0 on success , -1 on failure
- */
-int deviceUpdateHandler(struct mosquitto *mosq, const struct mosquitto_message *message) {
-
-	int ret = 0;
-	char * type = NULL;
-	char * eui64String = NULL;
-	cJSON * node = NULL;
-	char * filePath = NULL;
-
-	logBtGattInfo ("Firmware update request received from selene\n");
-	node = cJSON_Parse(message->payload);
-	if ( node == NULL ) {
-		logBtGattErr ("Failed to parse json\n");
-		return -1;
-	}
-
-	type = cJSON_GetObjectItem(node, "type")->valuestring;
-	logBtGattInfo ("Firmware update type == %s\n",type);
-	filePath = cJSON_GetObjectItem(node, "filePath")->valuestring;
-
-	if ( !strncmp(type, "update_device", strlen(type))) {
-
-		eui64String = cJSON_GetObjectItem(node, "deviceUid")->valuestring;
-		logBtGattInfo ("Device eui64String = %s\n",eui64String);
-		ret = updateEndDeviceFirmware(mosq, node);
-		if ( ret == -1 ){
-			sendFirmwareUpdateResponseToSelene(mosq, eui64String, "failed", "Failed to update firmware file");
-		}
-
-	} else if (!strncmp(type, "update_service", strlen(type))) {
-
-		ret = updateGatewayServices(mosq, node);
-		if ( ret == -1 ){
-			sendServiceUpdateResponseToSelene(mosq, "failed", "Failed to update gateway services");
-		}
-	} else {
-		logBtGattErr("Received wrong update type\n");
-		cJSON_Delete(node);
-		return -1;
-	}
-
-	/* Remove file from system */
-	if( access(filePath, F_OK ) != -1 )
-		remove(filePath);
-
-	cJSON_Delete(node);
-	return 0;
-}
 
 /* zigbeeRemoveDevice()
  *
@@ -1158,7 +1067,7 @@ int deviceUpdateHandler(struct mosquitto *mosq, const struct mosquitto_message *
  *
  * \return : 0 on success , -1 on failure
  */
-int zigbeeRemoveDevice(struct mosquitto *mosq, char * nodeId) {
+static int zigbeeRemoveDevice(struct mosquitto *mosq, char * nodeId) {
 
 	char command[100]={0};
 	char mqttTopic[32] = {0};
@@ -1186,7 +1095,7 @@ int zigbeeRemoveDevice(struct mosquitto *mosq, char * nodeId) {
  *
  * \return : 0 on success , -1 on failure
  */
-int zigbeeUnbindDevice(struct mosquitto *mosq, cJSON *deviceObject) {
+static int zigbeeUnbindDevice(struct mosquitto *mosq, cJSON *deviceObject) {
 
 	int l_count,l_count1;
 	int cluster_count = 0;
@@ -1240,7 +1149,7 @@ int zigbeeUnbindDevice(struct mosquitto *mosq, cJSON *deviceObject) {
  *
  * \return : 0 on success , -1 on failure
  */
-int removeJoinedDevices(struct mosquitto *mosq){
+static int removeJoinedDevices(struct mosquitto *mosq){
 
 	int l_count,l_count1;
 	int provisionedDeviceCount = 0;
@@ -1262,7 +1171,7 @@ int removeJoinedDevices(struct mosquitto *mosq){
 	/* If gateway is not connected to cloud then provisioned device list may be NULL.
 	 * If provisioned devicelist is NULL then do not remove any devices from network
 	 */
-	if ( gatewayConnectivity == 0 ) {
+	if ( is_gateway_provisioned() == 0 ) {
 		logBtGattInfo("Gateway is not connected to cloud.\n");
 		return 0;
 	}
@@ -1336,7 +1245,7 @@ int removeJoinedDevices(struct mosquitto *mosq){
  *
  * \return : 0 on success , -1 on failure
  */
-int bleShuttingDownCallback(struct mosquitto *mosq, const struct mosquitto_message *message){
+static int bleShuttingDownCallback(struct mosquitto *mosq, const struct mosquitto_message *message){
 
 	int status = MOSQ_ERR_INVAL;
 	char mqttTopic[32] = {0};
@@ -1358,111 +1267,54 @@ int bleShuttingDownCallback(struct mosquitto *mosq, const struct mosquitto_messa
 	return status;
 }
 
-/* registerDevice()
- * \brief : Register Device function to create and publish device
- *  		registration payload to selene
+/* registerSensor()
+ * \brief : Register EFR32 sensor Device function to create and publish device
+ *  		registration payload
  *
  * \param [in] mosq    : Pointer to instance of mosquitto.
- *        [in] payload : Pointer to payload received when device joined.
+ *        [in] payload : Pointer to payload received for provision.
  *
  * \return : 0 on success , -1 on failure
  */
-int registerDevice(struct mosquitto *mosq, char * payload) {
-
-	int l_count = 0,l_count1 = 0;
-	int deviceType = 0;
-	int deviceVersion = 0;
-	int status = MOSQ_ERR_INVAL;
-	cJSON *property = NULL;
-	cJSON * deviceObject = NULL;
-	char * deviceName = NULL;
-	char * eui64String = NULL;
-	char * deviceTypeStr = NULL;
-	char * channel = NULL;
-	char deviceVersionString[32] = {0};
+static int registerSensor(struct mosquitto *mosq, char * payload) {
+	cJSON * requestObject = NULL;
 	char * ptr = NULL;
-
-	if (payload == NULL) {
-		logBtGattErr ("Invalid pointer\n");
-		return -1;
-	}
+	int status;
 
 	cJSON *node = cJSON_Parse(payload);
 	if (node == NULL) {
-		logBtGattErr ("Failed to parse json\n");
+		logBtGattErr ("Failed to parse payload\n");
 		return -1;
 	}
 
-	deviceName = cJSON_GetObjectItem(node, "deviceName")->valuestring;
-
-	cJSON *deviceEndpoint = cJSON_GetObjectItem(node, "deviceEndpoint");
-	eui64String = cJSON_GetObjectItem(deviceEndpoint, "eui64")->valuestring;
-
-	deviceTypeStr = cJSON_GetObjectItem(node, "deviceType")->valuestring;
-	sscanf (&deviceTypeStr[2],"%x",&deviceType);
-
-	// Get Device type name
-	for ( l_count = 0 ; l_count < sizeof(deviceTypeArray)/sizeof(DEVICETYPE) ; l_count++) {
-
-		if ( deviceType == deviceTypeArray[l_count].deviceTypeId ) {
-			break;
-		}
-	}
-
-	// Create device registration payload
-	cJSON * deviceNode = cJSON_CreateObject();
-	cJSON_AddStringToObject(deviceNode , "deviceUid", &eui64String[2]);
-	cJSON_AddStringToObject(deviceNode , "deviceType", deviceTypeArray[l_count].deviceTypeName);
-	cJSON_AddStringToObject(deviceNode , "deviceName", deviceName);
-
-	if ( deviceType == DEVICE_ID_DIMMABLE_LIGHT ) {
-		cJSON_AddStringToObject(deviceNode , "softwareName", LEDNODE_SOFTWARE_PRODUCT_NAME);
-	} if ( deviceType == DEVICE_TYPE_SOIL_NODE ) {
-		cJSON_AddStringToObject(deviceNode , "softwareName", SOILNODE_SOFTWARE_PRODUCT_NAME);
-	}
-
-	// Get software version
-	for (l_count1 = 0; l_count1 < cJSON_GetArraySize(deviceFirmwareVersionList); l_count1++) {
-
-		deviceObject = cJSON_GetArrayItem(deviceFirmwareVersionList, l_count1);
-		char * deviceEui64String = cJSON_GetObjectItem(deviceObject, "eui64")->valuestring;
-		if (!strncmp (eui64String, deviceEui64String, strlen(deviceEui64String))) {
-			deviceVersion = cJSON_GetObjectItem(deviceObject,"version")->valueint;
-			sprintf (deviceVersionString, "%d.0.0",deviceVersion);
-			cJSON_AddStringToObject(deviceNode , "softwareVersion", deviceVersionString);
-		}
-	}
-
-	property = cJSON_AddArrayToObject(deviceNode , "properties");
-
-	if ( deviceType == DEVICE_ID_DIMMABLE_LIGHT ) {
-		for ( l_count = LED_CHANNEL_1 ; l_count < LED_CHANNEL_MAX ; l_count++ ) {
-			channel = cJSON_GetObjectItem(node, led_state_control_array[l_count])->valuestring;
-			cJSON_AddStringToObject ( deviceNode, led_state_control_array[l_count], channel);
-		}
-	}
-
-	ptr = cJSON_PrintUnformatted(deviceNode);
-	if (ptr == NULL ) {
-		logBtGattErr ("Failed to parse json\n");
+	requestObject = cJSON_CreateArray();
+	if (requestObject == NULL) {
+		logBtGattErr ("Failed to create object\n");
 		cJSON_Delete(node);
-		cJSON_Delete(deviceNode);
 		return -1;
 	}
-	status = mosquitto_publish(mosq, NULL, MQTT_PUB_DEVICE_REGISTER, strlen(ptr), ptr, 1, false);
-	if ( status != MOSQ_ERR_SUCCESS){
-		logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_DEVICE_REGISTER, status);
+	cJSON_AddItemToArray(requestObject, node);
+
+	ptr = cJSON_PrintUnformatted(requestObject);
+	if (ptr == NULL) {
+		logBtGattErr ("Failed to parse request json\n");
+		cJSON_Delete(requestObject);
+		return -1;
+	}
+	status = mosquitto_publish(mosq, NULL, MQTT_PUB_DEVICE_PROVISION,
+			strlen(ptr), ptr, 1, false);
+	if (status != MOSQ_ERR_SUCCESS) {
+		logBtGattErr("could not publish to topic:%s err:%d",
+				MQTT_PUB_DEVICE_PROVISION, status);
 		free(ptr);
-		cJSON_Delete(node);
-		cJSON_Delete(deviceNode);
+		cJSON_Delete(requestObject);
 		return -1;
 	}
-	logBtGattInfo ("Successfully publish Device registration payload \"%s\" on topic %s \n", ptr, MQTT_PUB_DEVICE_REGISTER);
+	logBtGattInfo ("Successfully publish register devices payload \"%s\" on topic %s\n",
+			ptr, MQTT_PUB_DEVICE_PROVISION);
 
 	free(ptr);
-	cJSON_Delete(node);
-	cJSON_Delete(deviceNode);
-	return 0;
+	cJSON_Delete(requestObject);
 }
 
 /* createDeviceTemplate()
@@ -1475,7 +1327,7 @@ int registerDevice(struct mosquitto *mosq, char * payload) {
  *
  * \return : 0 on success , -1 on failure
  */
-int createDeviceTemplate ( cJSON * node ) {
+static int createDeviceTemplate ( cJSON * node ) {
 
 	int l_count = 0;
 	int l_count1 = 0;;
@@ -1572,7 +1424,7 @@ int createDeviceTemplate ( cJSON * node ) {
  * \return : 0 on success , -1 on failure
  */
 
-int requestNodeDefaultAttributes(struct mosquitto * mosq, cJSON * node){
+static int requestNodeDefaultAttributes(struct mosquitto * mosq, cJSON * node){
 
 	char command[256] = {0};
 	char mqttTopic[32] = {0};
@@ -1638,7 +1490,7 @@ int requestNodeDefaultAttributes(struct mosquitto * mosq, cJSON * node){
  *
  * \return : 0 on success , -1 on failure
  */
-int sendBindCommandToCoordinator(struct mosquitto *mosq, char * eui64){
+static int sendBindCommandToCoordinator(struct mosquitto *mosq, char * eui64){
 
 	char command[256]={0};
 	char mqttTopic[32] = {0};
@@ -1667,7 +1519,7 @@ int sendBindCommandToCoordinator(struct mosquitto *mosq, char * eui64){
  *
  * \return : 0 on success , -1 on failure
  */
-int genericConfigureBind(struct mosquitto *mosq, int endpoint, char *nodeId, char *clusterIdStr ,  char * eui64){
+static int genericConfigureBind(struct mosquitto *mosq, int endpoint, char *nodeId, char *clusterIdStr ,  char * eui64){
 
 	char command[256]={0};
 	char mqttTopic[32] = {0};
@@ -1696,7 +1548,7 @@ int genericConfigureBind(struct mosquitto *mosq, int endpoint, char *nodeId, cha
  *
  * \return : 0 on success , -1 on failure
  */
-int bindAndSetNodeReportableAttributes(struct mosquitto *mosq, cJSON * node) {
+static int bindAndSetNodeReportableAttributes(struct mosquitto *mosq, cJSON * node) {
 
 	int l_count,l_count1;
 	int clusterId = 0;
@@ -1765,7 +1617,7 @@ int bindAndSetNodeReportableAttributes(struct mosquitto *mosq, cJSON * node) {
  *
  * \return : 0 on success , -1 on failure
  */
-int onNodeJoin (struct mosquitto *mosq, cJSON * payload) {
+static int onNodeJoin (struct mosquitto *mosq, cJSON * payload) {
 
 	int status = 0;
 	bool retendpoint = false;
@@ -1805,7 +1657,7 @@ int onNodeJoin (struct mosquitto *mosq, cJSON * payload) {
  *
  * \return : formatValue
  */
-double formatAndAssignValue (char * property , long value) {
+static double formatAndAssignValue (char * property , long value) {
 
 	double formatValue = 0;
 	if (!strncmp(property, "temperatureValue",strlen(property))){
@@ -1829,7 +1681,7 @@ double formatAndAssignValue (char * property , long value) {
  *
  * \return attributeBufferLong : Parsed data
  */
-long zclParseBufferRaw(char * attributeDataType , char * attributeBuffer) {
+static long zclParseBufferRaw(char * attributeDataType , char * attributeBuffer) {
 
 	int attributeDataTypeInt;
 	long long attributeBufferLong = 0;
@@ -1847,14 +1699,14 @@ long zclParseBufferRaw(char * attributeDataType , char * attributeBuffer) {
 
 /* onAttributeUpdate()
  * \brief : function to receive attributes value
- *  		and create & publish telemetry payload to selene
+ *  		and create & publish telemetry payload to cloud
  *
  * \param [in] mosq    : Pointer to instance of mosquitto.
  * \param [in] message : Pointer to instance of mosquitto message.
  *
  * \return : 0 on success , -1 on failure
  */
-int onAttributeUpdate (struct mosquitto * mosq , const struct mosquitto_message * message) {
+static int onAttributeUpdate (struct mosquitto * mosq , const struct mosquitto_message * message) {
 
 	int l_count1 = 0;
 	int clusterId = 0;
@@ -1987,14 +1839,14 @@ int onAttributeUpdate (struct mosquitto * mosq , const struct mosquitto_message 
 /* deviceOtaRequest()
  * \brief : This function received ota request from end-device and
  *          and handle firmware version of end-device. If firmware
- *          version is change then give response to selene.
+ *          version is change then give response to cloud.
  *
  * \param [in] mosq  : Pointer to instance of mosquitto.
  * \param [in] node  : Pointer to instance of json payload.
  *
  * \return : 0 on success , -1 on failure
  */
-int deviceOtaRequest(struct mosquitto * mosq ,cJSON *node) {
+static int deviceOtaRequest(struct mosquitto * mosq ,cJSON *node) {
 
 	int l_count, l_count1 = 0;
 	int status = MOSQ_ERR_INVAL;
@@ -2034,7 +1886,7 @@ int deviceOtaRequest(struct mosquitto * mosq ,cJSON *node) {
 	}
 
 	/* When zigbee coordinator received ota request of end-device then compare the version of device
-           with previous firmware verison. If version is changed then send response to selene */
+           with previous firmware verison. If version is changed then send response to cloud */
 	for (l_count = 0; l_count < cJSON_GetArraySize(deviceFirmwareVersionList); l_count++) {
 
 		deviceObject = cJSON_GetArrayItem(deviceFirmwareVersionList, l_count);
@@ -2083,8 +1935,9 @@ int deviceOtaRequest(struct mosquitto * mosq ,cJSON *node) {
 							}
 						}
 
-						/* send response to selene */
-						sendFirmwareUpdateResponseToSelene(mosq, deviceUpdateEui64, "success", "Device updated successfully");
+						// TODO
+						/* send response */
+
 						/* send command to zigbee cooridnator to reload ota-files */
 						snprintf (command , sizeof(command), "{\"commands\" : [{\"command\":\"plugin ota-storage-common reload\",\"postDelayMs\":100}]}");
 						snprintf (mqttTopic, sizeof(mqttTopic), "gw/%s/commands",gatewayEui64);
@@ -2141,7 +1994,7 @@ int deviceOtaRequest(struct mosquitto * mosq ,cJSON *node) {
  *
  * \return : 0 on success , -1 on failure
  */
-int lednodeChannelIntensity(struct mosquitto * mosq ,cJSON *node) {
+static int lednodeChannelIntensity(struct mosquitto * mosq ,cJSON *node) {
 
 	char * commandData = NULL;
 	char * eui64String = NULL;
@@ -2166,23 +2019,7 @@ int lednodeChannelIntensity(struct mosquitto * mosq ,cJSON *node) {
 		cJSON_AddNumberToObject(telemetryNode , property, channelData[led_count - 1]);
 	}
 
-	snprintf (mqttTopic, sizeof(mqttTopic), "selene/mqtt/%s/tel", &eui64String[2]);
-	ptr = cJSON_PrintUnformatted(telemetryNode);
-	if (ptr == NULL ) {
-		logBtGattErr ("Failed to parse json\n");
-		cJSON_Delete(telemetryNode);
-		return -1;
-	}
-
-	status = mosquitto_publish(mosq, NULL, mqttTopic , strlen(ptr), ptr, 1, false);
-	if ( status != MOSQ_ERR_SUCCESS){
-		logBtGattErr("could not publish to topic:%s err:%d", mqttTopic, status);
-		free(ptr);
-		cJSON_Delete(telemetryNode);
-		return -1;
-	}
-	logBtGattInfo ("Successfully publish telemetry \"%s\" on topic ::  %s\n", ptr, mqttTopic);
-	free(ptr);
+	//TODO send this to cloud
 	cJSON_Delete(telemetryNode);
 	return 0;
 }
@@ -2196,7 +2033,7 @@ int lednodeChannelIntensity(struct mosquitto * mosq ,cJSON *node) {
  *
  * \return : 0 on success , -1 on failure
  */
-int lednodeRGBConfiguration(struct mosquitto * mosq ,cJSON *node) {
+static int lednodeRGBConfiguration(struct mosquitto * mosq ,cJSON *node) {
 
 	char * commandData = NULL;
 	char * eui64String = NULL;
@@ -2269,7 +2106,7 @@ int lednodeRGBConfiguration(struct mosquitto * mosq ,cJSON *node) {
  *
  * \return : 0 on success , -1 on failure
  */
-int onZCLResponse (struct mosquitto * mosq , const struct mosquitto_message * message) {
+static int onZCLResponse (struct mosquitto * mosq , const struct mosquitto_message * message) {
 
 	int status = 0;
 	char * commandIdString = NULL;
@@ -2318,7 +2155,7 @@ int onZCLResponse (struct mosquitto * mosq , const struct mosquitto_message * me
  *
  * \return : If device is already provisioned then return true else false.
  */
-bool isDeviceProvisioned(cJSON * joinedDevice) {
+static bool isDeviceProvisioned(cJSON * joinedDevice) {
 
 	int l_count;
 	bool ret = false;
@@ -2349,7 +2186,7 @@ bool isDeviceProvisioned(cJSON * joinedDevice) {
  *
  * \return : If device is present then return true else false
  */
-bool checkIfDeviceIsAlreadyJoined( cJSON *node) {
+static bool checkIfDeviceIsAlreadyJoined( cJSON *node) {
 
 	int l_count;
 	int ret = false;
@@ -2384,7 +2221,7 @@ bool checkIfDeviceIsAlreadyJoined( cJSON *node) {
  *
  * \return : 0 on success , -1 on failure
  */
-int checkGatewayHeartbeat(struct mosquitto *mosq, const struct mosquitto_message * message) {
+static int checkGatewayHeartbeat(struct mosquitto *mosq, const struct mosquitto_message * message) {
 
 	char command[256] = {0};
 	char mqttTopic[32] = {0};
@@ -2447,444 +2284,25 @@ int checkGatewayHeartbeat(struct mosquitto *mosq, const struct mosquitto_message
 	return 0;
 }
 
-/* deviceStateControl()
- *
- * \brief : this routine is called to handle device state change request.
- *
- * \param [in] mosq    : Pointer to instance of mosquitto.
- * \param [in] message : Pointer to instance of mosquitto message.
- *
- * \return : 0 on success , -1 on failure
- */
-int deviceStateControl( struct mosquitto *mosq , const struct mosquitto_message *message){
-
-	char * stateCommand = NULL;
-	char * deviceUid = NULL;
-	char command[256] = {0};
-	char mqttTopic[64] = {0};
-	char * value = NULL;
-	int status = -1;
-	int l_count;
-
-	if ((mosq == NULL) || (message == NULL)){
-		logBtGattErr ("Invalid pointers\n");
-		return -1;
-	}
-
-	cJSON *node = cJSON_Parse(message->payload);
-	if (node == NULL) {
-		logBtGattErr ("Failed to parse json\n");
-		return -1;
-	}
-	stateCommand = cJSON_GetObjectItem(node, "command")->valuestring;
-	deviceUid = cJSON_GetObjectItem(node, "deviceUid")->valuestring;
-
-	cJSON * properties = cJSON_GetObjectItem(node, "properties");
-	if ( properties  == NULL) {
-		logBtGattErr ("Failed to parse json\n");
-		cJSON_Delete(node);
-		return -1;
-	}
-
-	for ( l_count = LED_CHANNEL_1 ; l_count < LED_CHANNEL_MAX ; l_count++) {
-
-		if (cJSON_GetObjectItem(properties, led_state_control_array[l_count])) {
-			value = cJSON_GetObjectItem(properties, led_state_control_array[l_count])->valuestring;
-
-			snprintf (command, sizeof(command), "{\"commands\":[{\"command\": \"zcl level-control mv-to-level %X 1 1 1\"},{\"command\": \"plugin device-table send {%s} 0x%d \",\"postDelayMs\":%d}]}", atoi(value), deviceUid, l_count, MV_TO_LEVEL_DELAY);
-			snprintf (mqttTopic, sizeof(mqttTopic), "gw/%s/commands",gatewayEui64);
-			status = mosquitto_publish(mosq, NULL, mqttTopic, strlen(command), command, 1, false);
-			if ( status != MOSQ_ERR_SUCCESS){
-				logBtGattErr("could not publish to topic:%s err:%d", mqttTopic, status);
-				cJSON_Delete(node);
-				return -1;
-			}
-			logBtGattInfo ("Successfully publish command \"%s\" on topic ::  %s\n", command, mqttTopic);
-		}
-	}
-	cJSON_Delete(node);
-	return 0;
-}
-
-/* seleneCommandHandler()
- *
- * \brief : this routine is called to handle selene command request
- *
- * \param [in] mosq    : Pointer to instance of mosquitto.
- * \param [in] message : Pointer to instance of mosquitto message.
- *
- * \return : 0 on success , -1 on failure
- */
-int seleneCommandHandler( struct mosquitto *mosq , const struct mosquitto_message *message){
-
-	char * command = NULL;
-	char * deviceUid = NULL;
-	char mqttCommand[256] = {0};
-	char mqttTopic[64] = {0};
-	int discoveredDeviceCount = 0;
-	int l_count;
-	int status = -1;
-
-	if (( mosq == NULL) || (message == NULL)){
-		logBtGattErr ("Invalid pointers\n");
-		return -1;
-	}
-	cJSON *node = cJSON_Parse(message->payload);
-	if (node == NULL) {
-		logBtGattErr ("Failed to parse json\n");
-		return -1;
-	}
-	command = cJSON_GetObjectItem(node, "command")->valuestring;
-	deviceUid = cJSON_GetObjectItem(node, "deviceUid")->valuestring;
-
-	if (!strncmp(command, "led_intensity",strlen(command))) {
-
-		discoveredDeviceCount = cJSON_GetArraySize(root);
-		for (l_count = 0 ; l_count < discoveredDeviceCount; l_count++) {
-
-			cJSON * deviceObject = cJSON_GetArrayItem(root, l_count);
-			cJSON * deviceEndpoint = cJSON_GetObjectItem(deviceObject, "deviceEndpoint");
-			char * eui64String = cJSON_GetObjectItem(deviceEndpoint, "eui64")->valuestring;
-
-			if (!strncmp(deviceUid,&eui64String[2],strlen(deviceUid))) {
-
-				status = requestNodeDefaultAttributes(mosq, deviceObject);
-				if (status == -1) {
-					cJSON_Delete(node);
-					return -1;
-				}
-				break;
-			}
-		}
-	} else if (!strncmp(command, "getChannelIntensity",strlen(command))) {
-
-		snprintf (mqttCommand, sizeof(mqttCommand), "{\"commands\":[{\"command\": \"custom get-led-intensity {%s}\",\"postDelayMs\":100}]}", deviceUid);
-		snprintf (mqttTopic, sizeof(mqttTopic), "gw/%s/commands",gatewayEui64);
-		status = mosquitto_publish(mosq, NULL, mqttTopic, strlen(mqttCommand), mqttCommand, 1, false);
-		if ( status != MOSQ_ERR_SUCCESS){
-			logBtGattErr("could not publish to topic:%s err:%d", mqttTopic, status);
-			cJSON_Delete(node);
-			return -1;
-		}
-		logBtGattInfo ("Successfully publish command \"%s\" on topic ::  %s\n", command, mqttTopic);
-	}
-	cJSON_Delete(node);
-	return 0;
-}
-
-/* deviceDeletionRequest()
- *
- * \brief : this routine remove device from gateway network.
- *
- * \param [in] mosq         : Pointer to instance of mosquitto.
- * \param [in] deleteDevice : Payload of device deletion request received from cloud.`
- *
- * \return : 0 on success , -1 on failure
- */
-int deviceDeletionRequest(struct mosquitto *mosq, cJSON * deleteDevice) {
-
-	int l_count = 0;
-	int discoveredDeviceCount = 0;
-	int status = 0;
-	char * eui64DeleteDevice = NULL;
-	char * nodeId = NULL;
-
-	eui64DeleteDevice = cJSON_GetObjectItem(deleteDevice, "deviceUid")->valuestring;
-
-	/* send command to zigbee coordinator to remove device from ota-device-list */
-	removeDeviceFromOtaDeviceList(mosq, eui64DeleteDevice);
-
-	// Remove device from device joined list
-	discoveredDeviceCount = cJSON_GetArraySize(root);
-
-	for (l_count = 0 ; l_count < discoveredDeviceCount; l_count++) {
-
-		cJSON * deviceObject = cJSON_GetArrayItem(root, l_count);
-		cJSON * deviceEndpoint = cJSON_GetObjectItem(deviceObject, "deviceEndpoint");
-		char * eui64String = cJSON_GetObjectItem(deviceEndpoint, "eui64")->valuestring;
-
-		if (!strncmp(eui64DeleteDevice,&eui64String[2],strlen(eui64DeleteDevice))) {
-			nodeId = cJSON_GetObjectItem(deviceObject, "nodeId")->valuestring;
-
-			// No need to send unbind command as custom command is used to bind device
-			/*
-			status = zigbeeUnbindDevice(mosq, deviceObject);
-			if ( status == -1){
-				logBtGattErr ("Failed to unbind device : %s\n",nodeId);
-				return -1;
-			}
-			*/
-			status = zigbeeRemoveDevice(mosq, nodeId);
-			if ( status == -1){
-				logBtGattErr ("Failed to remove device : %s\n",nodeId);
-				return -1;
-			}
-			cJSON_DeleteItemFromArray(root, l_count);
-			printAllDeviceList();
-			break;
-		}
-	}
-
-	// Remove device from provisioned list
-	discoveredDeviceCount = cJSON_GetArraySize(provisionedDeviceList);
-
-	for (l_count = 0 ; l_count < discoveredDeviceCount; l_count++) {
-
-		cJSON * deviceObject = cJSON_GetArrayItem(provisionedDeviceList, l_count);
-		char * eui64String = cJSON_GetObjectItem(deviceObject, "deviceUid")->valuestring;
-
-		if (!strncmp(eui64DeleteDevice,eui64String,strlen(eui64DeleteDevice))) {
-			cJSON_DeleteItemFromArray(provisionedDeviceList, l_count);
-			printProvisionedDeviceList();
-			break;
-		}
-	}
-	return status;
-}
-
-/* checkSeleneResponse()
- *
- * \brief : This callback function called when received any request
- *          and response from selene.
- *
- * \param [in] mosq    : Pointer to instance of mosquitto.
- * \param [in] message : Pointer to instance of mosquitto message.
- *
- * \return : 0 on success , -1 on failure
- */
-int checkSeleneResponse( struct mosquitto *mosq , const struct mosquitto_message * message)
-{
-	int status = 0;
-	int l_count;
-	bool deviceAlreadyProvisioned = false;
-	char * typeOfResponse = NULL;
-	char * result = NULL;
-	char * ptr = NULL;
-	char * eui64String = NULL;
-	char command[256] = {0};
-	char mqttTopic[64] = {0};
-	cJSON * devices = NULL;
-	struct timeval curTime;
-	struct timeval tv;
-
-	if ((mosq == NULL) || (message == NULL)){
-		logBtGattErr ("Invalid pointer\n");
-		return -1;
-	}
-
-	cJSON *node = cJSON_Parse(message->payload);
-	if (node == NULL) {
-		logBtGattErr ("Failed to parse json\n");
-		return -1;
-	}
-	typeOfResponse = cJSON_GetObjectItem(node, "type")->valuestring;
-
-	if (!strncmp(typeOfResponse, SELENE_DEVICE_LIST_RESPONSE, strlen(SELENE_DEVICE_LIST_RESPONSE))) {
-
-		devices = cJSON_GetObjectItem(node, "device_list");
-		ptr = cJSON_PrintUnformatted(devices);
-		if (ptr == NULL ) {
-			logBtGattErr ("Failed to parse json\n");
-			cJSON_Delete(node);
-			return -1;
-		}
-		provisionedDeviceList = cJSON_Parse(ptr);
-		if ( provisionedDeviceList == NULL ) {
-			logBtGattErr ("Failed to parse json\n");
-			cJSON_Delete(node);
-			free(ptr);
-			return -1;
-		}
-		free(ptr);
-		/* Update provision device list for device timestamp and status */
-		for (l_count = 0; l_count < cJSON_GetArraySize(provisionedDeviceList); l_count++) {
-
-			cJSON *provisionedDeviceObject = cJSON_GetArrayItem(provisionedDeviceList, l_count);
-			cJSON_AddNumberToObject(provisionedDeviceObject, "timestamp", 0);
-			cJSON_AddBoolToObject(provisionedDeviceObject, "status", true);
-			cJSON_DetachItemFromObject(provisionedDeviceObject, "deviceName");
-			cJSON_DetachItemFromObject(provisionedDeviceObject, "deviceType");
-		}
-
-		printProvisionedDeviceList();
-		if ( root != NULL ) {
-			removeJoinedDevices(mosq);
-		} else {
-			logBtGattInfo ("Device list is NULL.\n");
-		}
-
-		/* Growhouse server will receive device list response only if selene successfully connects to
-		 * mqtt server so assume gateway is connected to network
-		 */
-		gatewayConnectivity = 1;
-		cJSON_Delete(node);
-
-		/* start device status monitoring */
-		startDeviceMonitor();
-
-	} else if (!strncmp(typeOfResponse, SELENE_DEVICE_DELETION_RESPONSE, strlen(SELENE_DEVICE_DELETION_RESPONSE))) {
-		status = deviceDeletionRequest(mosq, node);
-		cJSON_Delete(node);
-
-	} else if (!strncmp(typeOfResponse, SELENE_GATEWAY_REGISTRATION_RESPONSE, strlen(SELENE_GATEWAY_REGISTRATION_RESPONSE))) {
-
-		result = cJSON_GetObjectItem(node, "result")->valuestring;
-		if (!strcmp(result, "true")) {
-			gatewayConnectivity = 1;
-
-			status = mosquitto_publish(mosq, NULL, MQTT_PUB_GATEWAY_CONNECT_RESPONSE, strlen(gatewayConnectivitySuccess), (char*)gatewayConnectivitySuccess, 1, false);
-			if ( status != MOSQ_ERR_SUCCESS){
-				logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_GATEWAY_CONNECT_RESPONSE, status);
-			} else {
-				logBtGattInfo ("Successfully publish gateway registration response payload \"%s\" on topic %s\n", (char *)gatewayConnectivitySuccess, MQTT_PUB_GATEWAY_CONNECT_RESPONSE);
-			}
-		} else {
-
-			status = mosquitto_publish(mosq, NULL, MQTT_PUB_GATEWAY_CONNECT_RESPONSE, strlen(gatewayConnectivityError), (char*)gatewayConnectivityError, 1, false);
-			if ( status != MOSQ_ERR_SUCCESS){
-				logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_GATEWAY_CONNECT_RESPONSE, status);
-			} else {
-				logBtGattInfo ("Successfully publish gateway registration response payload \"%s\" on topic %s\n", (char *)gatewayConnectivityError, MQTT_PUB_GATEWAY_CONNECT_RESPONSE);
-			}
-
-		}
-		cJSON_Delete(node);
-
-		if ( provisionedDeviceList == NULL ) {
-			// Request selene to provide already provisioned device list
-			status = mosquitto_publish(mosq, NULL, MQTT_PUB_SELENE_REQUEST, strlen(deviceListCommand), deviceListCommand, 1, false);
-			if ( status != MOSQ_ERR_SUCCESS){
-				logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_SELENE_REQUEST, status);
-				return -1;
-			}
-			logBtGattInfo ("Successfully publish payload to get deviceList from selene on topic %s\n", MQTT_PUB_SELENE_REQUEST);
-		}
-
-	} else if (!strncmp(typeOfResponse, SELENE_DEVICE_REGISTRATION_RESPONSE, strlen(SELENE_DEVICE_REGISTRATION_RESPONSE))) {
-
-		result = cJSON_GetObjectItem(node, "result")->valuestring;
-
-		/* If device registration failed then remove device from network */
-		if (!strcmp(result, "false")) {
-			logBtGattInfo("Get device registartion failed. Remove device from network and send failed to ble app\n");
-			deviceDeletionRequest(mosq, node);
-		} else {
-			eui64String = cJSON_GetObjectItem(node, "deviceUid")->valuestring;
-			gettimeofday(&tv, NULL);
-			cJSON * provisionDevice = cJSON_CreateObject();
-			cJSON_AddStringToObject(provisionDevice, "deviceUid", eui64String);
-			cJSON_AddNumberToObject(provisionDevice, "timestamp", tv.tv_sec);
-			cJSON_AddBoolToObject(provisionDevice, "status", true);
-
-			/* Check if device is already provisioned or not. If device is already provisioned then do not add into provisioned
-			   Device list */
-			for (l_count = 0; l_count < cJSON_GetArraySize(provisionedDeviceList); l_count++) {
-
-				cJSON *provisionedDeviceObject = cJSON_GetArrayItem(provisionedDeviceList, l_count);
-				char * provisionedEui64String = cJSON_GetObjectItem(provisionedDeviceObject, "deviceUid")->valuestring;
-				if (!strncmp (eui64String, provisionedEui64String, strlen(provisionedEui64String))) {
-					deviceAlreadyProvisioned = true;
-					break;
-				}
-			}
-			/* Add device to provisioned device list*/
-			if (!deviceAlreadyProvisioned)
-				cJSON_AddItemToArray(provisionedDeviceList, provisionDevice);
-
-			printProvisionedDeviceList();
-		}
-		status = mosquitto_publish(mosq, NULL, MQTT_PUB_DEVICE_CONNECT_RESPONSE, message->payloadlen, message->payload, 1, false);
-		if ( status != MOSQ_ERR_SUCCESS){
-			logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_DEVICE_CONNECT_RESPONSE, status);
-		} else {
-			logBtGattInfo ("Successfully publish device registration response payload \"%s\" on topic %s\n", (char *)message->payload, MQTT_PUB_DEVICE_CONNECT_RESPONSE);
-		}
-		cJSON_Delete(node);
-		pthread_mutex_unlock(&provision_lock);
-
-	} else if (!strncmp(typeOfResponse, SELENE_GATEWAY_DELETION_RESPONSE, strlen(SELENE_GATEWAY_DELETION_RESPONSE))) {
-
-		result = cJSON_GetObjectItem(node, "result")->valuestring;
-		if (!strcmp(result, "true")) {
-
-			/* Set parameters to again default*/
-			gatewayConnectivity = 0;
-			if (root != NULL ) {
-				cJSON_Delete(root);
-				root = NULL;
-			}
-
-			if ( provisionedDeviceList != NULL ) {
-				cJSON_Delete(provisionedDeviceList);
-				provisionedDeviceList = NULL;
-			}
-
-			if ( deviceFirmwareVersionList != NULL) {
-				cJSON_Delete(deviceFirmwareVersionList);
-				deviceFirmwareVersionList = NULL;
-			}
-
-			if ( deviceUpdateRequestList != NULL) {
-				cJSON_Delete(deviceUpdateRequestList);
-				deviceUpdateRequestList = NULL;
-			}
-
-			/* Send command to zigbee coordinator to get device list*/
-			snprintf (command, sizeof(command), "{\"commands\":[{\"command\": \"plugin device-table print\",\"postDelayMs\":100}]}");
-			snprintf (mqttTopic, sizeof(mqttTopic), "gw/%s/commands",gatewayEui64);
-			status = mosquitto_publish(mosq, NULL, mqttTopic, strlen(command), command, 1, false);
-			if ( status != MOSQ_ERR_SUCCESS){
-				logBtGattErr("could not publish to topic:%s err:%d", mqttTopic, status);
-			} else {
-				logBtGattInfo ("Successfully publish command to get device list from zigbee coordinator\n");
-			}
-
-			/* Send command to ble-server to get disconnect */
-			status = mosquitto_publish(mosq, NULL, MQTT_PUB_GATEWAY_DISCONNECT, strlen("disconnect"), "disconnect", 1, false);
-			if ( status != MOSQ_ERR_SUCCESS){
-				logBtGattErr("could not publish to topic:%s err:%d", mqttTopic, status);
-			} else {
-				logBtGattInfo ("Successfully publish command to disconnect ble\n");
-			}
-
-			/* Remove selene properties file*/
-			if( access(SELENE_PROPERTIES_FILE, F_OK ) != -1 )
-				remove(SELENE_PROPERTIES_FILE);
-
-		} else {
-			logBtGattErr ("Failed to delete gateway\n");
-		}
-		cJSON_Delete(node);
-	}
-
-	return status;
-}
-
-/* provisionDeviceThread()
+/* provisionSensorThread()
  *
  * \brief : this thread will receive the list of devices to be provision.
- *          If device needs to provision then register device on arrow connect
- *          through selene otherwise remove device from network.
+ *          If device needs to provision then register device on EFR32 cloud
+ *          otherwise remove device from network.
 
  * \param [in] argv : Pointer to instance of mosquitto message.
  *
  */
-void * provisionDeviceThread(void * argv) {
-
-	int l_count,l_count1,l_count2,l_count3;
+static void * provisionSensorThread(void * argv) {
+	int l_count,l_count1;
 	int status = 0;
 	int newDeviceCount = 0;
 	int discoveredDeviceCount = 0;
-	bool alreadyProvisioned = false;
 	char * deviceName = NULL;
 	char mqttTopic[64] = {0};
 	char command[256] = {0};
-	cJSON * ledconfiguration = NULL;
-	char ledChannelConfiguration[6] = {0};
-	char * ledconfig = NULL;
 	char * ptr = NULL;
 	struct timespec timeoutTime;
-
 	struct mosquitto_message * message = (struct mosquitto_message *) argv;
 
 	if ((mosq == NULL) || (message == NULL)){
@@ -2920,9 +2338,8 @@ void * provisionDeviceThread(void * argv) {
 
 		cJSON *newDeviceObject = cJSON_GetArrayItem(newDevices, l_count);
 		char * newEui64String = cJSON_GetObjectItem(newDeviceObject, "eui64")->valuestring;
-		char * deviceType = cJSON_GetObjectItem(newDeviceObject, "deviceType")->valuestring;
 		int decision = cJSON_GetObjectItem(newDeviceObject, "decision")->valueint;
-		if (cJSON_GetObjectItem(newDeviceObject, "deviceName"))
+		if (cJSON_GetObjectItem(newDeviceObject, "description"))
 			deviceName = cJSON_GetObjectItem(newDeviceObject, "deviceName")->valuestring;
 
 		for (l_count1 = 0 ; l_count1 < discoveredDeviceCount; l_count1++) {
@@ -2933,107 +2350,46 @@ void * provisionDeviceThread(void * argv) {
 			char * nodeId = cJSON_GetObjectItem(deviceObject, "nodeId")->valuestring;
 
 			if (!strncmp(newEui64String,&eui64String[2],strlen(newEui64String))) {
+				clock_gettime(CLOCK_REALTIME, &timeoutTime);
+				timeoutTime.tv_sec += 30;
+				/* Wait for maximum upto 30 sec for next device to be provisioned */
+				pthread_mutex_timedlock(&provision_lock, &timeoutTime);
 
-				if (decision == true) {
+				cJSON_AddStringToObject (deviceObject, "deviceName", deviceName);
 
-					clock_gettime(CLOCK_REALTIME, &timeoutTime);
-					timeoutTime.tv_sec += 10;
-					/* Wait for maximum upto 10 sec for next device to be provisioned on arrow connect */
-					pthread_mutex_timedlock(&provision_lock, &timeoutTime);
-
-					cJSON_AddStringToObject (deviceObject, "deviceName", deviceName);
-					if (!strcmp(deviceType, "LedNode")) {
-						ledconfiguration = cJSON_GetObjectItem(newDeviceObject, "ledconfiguration");
-						for (l_count2 = LED_CHANNEL_1 ; l_count2 < LED_CHANNEL_MAX ; l_count2++) {
-							ledconfig = cJSON_GetObjectItem(ledconfiguration, led_state_control_array[l_count2])->valuestring;
-							cJSON_AddStringToObject(deviceObject,led_state_control_array[l_count2],ledconfig);
-							for ( l_count3 = 0 ;  l_count3 < sizeof(led_channel_types)/sizeof(LED_CHANNEL_TYPES) ; l_count3++) {
-								if (!strncmp(ledconfig, led_channel_types[l_count3].type, strlen(ledconfig))) {
-
-									ledChannelConfiguration[l_count2 - 1] = led_channel_types[l_count3].key;
-									break;
-								}
-							}
-						}
-					}
-
-					status = onNodeJoin(mosq, deviceObject);
-					if (status == -1) {
-						free(message);
-						cJSON_Delete(newDevices);
-						logBtGattInfo ("Pthread mutex unlock\n");
-						pthread_mutex_unlock(&lock);
-						return NULL;
-					}
-					// register device
-					ptr = cJSON_PrintUnformatted(deviceObject);
-					if (ptr == NULL ) {
-						logBtGattErr ("Failed to parse json\n");
-						free(message);
-						cJSON_Delete(newDevices);
-						pthread_mutex_unlock(&lock);
-						return NULL;
-					}
-					status = registerDevice(mosq, ptr);
-					if (status == -1) {
-						free(message);
-						cJSON_Delete(newDevices);
-						free(ptr);
-						logBtGattInfo ("Pthread mutex unlock\n");
-						pthread_mutex_unlock(&lock);
-						return NULL;
-					}
-					free(ptr);
-
-
-					if (!strcmp(deviceType, "LedNode")) {
-
-						snprintf (command, sizeof(command), "{\"commands\":[{\"command\": \"custom set-led-channel {%s} %x %x %x %x %x %x\",\"postDelayMs\":100}]}", newEui64String, ledChannelConfiguration[0], ledChannelConfiguration[1], ledChannelConfiguration[2],							ledChannelConfiguration[3], ledChannelConfiguration[4], ledChannelConfiguration[5]);
-
-						snprintf (mqttTopic, sizeof(mqttTopic), "gw/%s/commands",gatewayEui64);
-						status = mosquitto_publish(mosq, NULL, mqttTopic, strlen(command), command, 1, false);
-						if ( status != MOSQ_ERR_SUCCESS){
-							logBtGattErr("could not publish to topic:%s err:%d", mqttTopic, status);
-							free(message);
-							cJSON_Delete(newDevices);
-							logBtGattInfo ("Pthread mutex unlock\n");
-							pthread_mutex_unlock(&lock);
-							return NULL;
-						}
-						logBtGattInfo ("Successfully publish lednode configuration to zigbee coordinator : %s\n", command);
-
-						/* Send command to get LedNode channel Intensity */
-						memset(command, 0x0, sizeof(command));
-						snprintf (command, sizeof(command), "{\"commands\":[{\"command\": \"custom get-led-intensity {%s}\",\"postDelayMs\":100}]}", newEui64String);
-						status = mosquitto_publish(mosq, NULL, mqttTopic, strlen(command), command, 1, false);
-						if ( status != MOSQ_ERR_SUCCESS){
-							logBtGattErr("could not publish to topic:%s err:%d", mqttTopic, status);
-							free(message);
-							cJSON_Delete(newDevices);
-							logBtGattInfo ("Pthread mutex unlock\n");
-							pthread_mutex_unlock(&lock);
-							return NULL;
-						}
-						logBtGattInfo ("Successfully publish command to get LedNode channel Intensity : %s\n", command);
-					}
-
-				} else {
-					/* If device is already provisioned and if received payload from growhouse mobile app
-					   to remove the device then remove the device from zigbee network */
-					//	alreadyProvisioned = isDeviceProvisioned(deviceObject);
-					if (!alreadyProvisioned) {
-						status = zigbeeRemoveDevice(mosq, nodeId);
-						cJSON_DeleteItemFromArray(root, l_count1);
-						printAllDeviceList();
-					} else {
-						logBtGattInfo ("Device is already provisioned eui64 == %s\n",eui64String);
-					}
+				status = onNodeJoin(mosq, deviceObject);
+				if (status == -1) {
+					free(message);
+					cJSON_Delete(newDevices);
+					logBtGattInfo ("Pthread mutex unlock\n");
+					pthread_mutex_unlock(&lock);
+					return NULL;
 				}
+				// register device
+				ptr = cJSON_PrintUnformatted(newDeviceObject);
+				if (ptr == NULL ) {
+					logBtGattErr ("Failed to parse json\n");
+					free(message);
+					cJSON_Delete(newDevices);
+					pthread_mutex_unlock(&lock);
+					return NULL;
+				}
+
+				status = registerSensor(mosq, ptr);
+				if (status == -1) {
+					free(message);
+					cJSON_Delete(newDevices);
+					free(ptr);
+					logBtGattInfo ("Pthread mutex unlock\n");
+					pthread_mutex_unlock(&lock);
+					return NULL;
+				}
+
+				free(ptr);
 				break;
 			}
 		}
 	}
-
 
 	free(message);
 	cJSON_Delete(newDevices);
@@ -3042,7 +2398,7 @@ void * provisionDeviceThread(void * argv) {
 
 	/* After provisioning remove all other devices from network */
 	clock_gettime(CLOCK_REALTIME, &timeoutTime);
-	timeoutTime.tv_sec += 10;
+	timeoutTime.tv_sec += 30;
 	pthread_mutex_timedlock(&provision_lock, &timeoutTime);
 	status = removeJoinedDevices(mosq);
 	if (status != 0) {
@@ -3050,12 +2406,11 @@ void * provisionDeviceThread(void * argv) {
 	}
 
 	pthread_mutex_unlock(&provision_lock);
-
 	/* Provisioning is done */
 	provisionInprogress = 0;
 }
 
-/* provisionDevice()
+/* provisionSensor()
  *
  * \brief : this routine will receive list of devices to be register
  *          and create thread to provision devices.
@@ -3065,7 +2420,7 @@ void * provisionDeviceThread(void * argv) {
  *
  * \return : 0 on success , -1 on failure
  */
-int provisionDevice(struct mosquitto * mosq, const struct mosquitto_message *message) {
+static int provisionSensor(struct mosquitto * mosq, const struct mosquitto_message *message) {
 
 	int ret;
 	pthread_t id;
@@ -3078,7 +2433,7 @@ int provisionDevice(struct mosquitto * mosq, const struct mosquitto_message *mes
 	mosquitto_message_copy(devicePayload, message);
 
 	/* Create thread to provision devices */
-	ret = pthread_create(&id, NULL, &provisionDeviceThread, (void *)devicePayload);
+	ret = pthread_create(&id, NULL, &provisionSensorThread, (void *)devicePayload);
 	if ( ret != 0) {
 		logBtGattErr("Failed to create provision device thread\n");
 		removeJoinedDevices(mosq);
@@ -3099,7 +2454,7 @@ int provisionDevice(struct mosquitto * mosq, const struct mosquitto_message *mes
  *
  * \return : 0 on success , -1 on failure
  */
-int newDeviceJoinedRequest(struct mosquitto *mosq, const struct mosquitto_message *message) {
+static int newDeviceJoinedRequest(struct mosquitto *mosq, const struct mosquitto_message *message) {
 
 	int deviceType = 0;
 	int l_count = 0;
@@ -3214,7 +2569,7 @@ int newDeviceJoinedRequest(struct mosquitto *mosq, const struct mosquitto_messag
  *
  * \return : 0 on success , -1 on failure
  */
-int onDeviceListReceived(struct mosquitto *mosq, const struct mosquitto_message * message) {
+static int onDeviceListReceived(struct mosquitto *mosq, const struct mosquitto_message * message) {
 
 	int status = 0;
 	int discoveredDeviceCount = 0;
@@ -3342,7 +2697,7 @@ int onDeviceListReceived(struct mosquitto *mosq, const struct mosquitto_message 
  *
  * \return : 0 on success , -1 on failure
  */
-int discoverDevices(struct mosquitto * mosq, const struct mosquitto_message *message){
+static int discoverDevices(struct mosquitto * mosq, const struct mosquitto_message *message){
 
 	int enable = 0;
 	int status = MOSQ_ERR_INVAL;
@@ -3368,7 +2723,7 @@ int discoverDevices(struct mosquitto * mosq, const struct mosquitto_message *mes
 
 	snprintf (mqttTopic, sizeof(mqttTopic), "gw/%s/commands",gatewayEui64);
 	if (enable){
-		if (gatewayConnectivity) {
+		if (is_gateway_provisioned()) {
 			status = mosquitto_publish(mosq, NULL, mqttTopic, strlen(openNetworkCommand), openNetworkCommand, 1, false);
 			if ( status != MOSQ_ERR_SUCCESS){
 				logBtGattErr("could not publish to topic:%s err:%d", mqttTopic, status);
@@ -3382,11 +2737,14 @@ int discoverDevices(struct mosquitto * mosq, const struct mosquitto_message *mes
 
 		} else {
 
-			status = mosquitto_publish(mosq, NULL, MQTT_PUB_GATEWAY_CONNECT_RESPONSE, strlen(gatewayConnectivityError), gatewayConnectivityError, 1, false);
+			status = mosquitto_publish(mosq, NULL, MQTT_PUB_REGISTER_RESPONSE,
+					strlen(gatewayConnectivityError), gatewayConnectivityError, 1, false);
 			if ( status != MOSQ_ERR_SUCCESS){
-				logBtGattErr("could not publish to topic:%s err:%d", MQTT_PUB_GATEWAY_CONNECT_RESPONSE, status);
+				logBtGattErr("could not publish to topic:%s err:%d",
+						MQTT_PUB_REGISTER_RESPONSE, status);
 			} else {
-				logBtGattInfo ("Successfully publish gateway connectivity error payload \"%s\" on topic %s\n", (char *)gatewayConnectivityError, MQTT_PUB_GATEWAY_CONNECT_RESPONSE);
+				logBtGattInfo ("Successfully publish gateway connectivity error payload \"%s\" on topic %s\n",
+						(char *)gatewayConnectivityError, MQTT_PUB_REGISTER_RESPONSE);
 			}
 		}
 	}
@@ -3419,7 +2777,7 @@ int discoverDevices(struct mosquitto * mosq, const struct mosquitto_message *mes
  *
  * \return none
  */
-void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
+static void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
 	bool match = 0;
 	int l_count;
@@ -3540,61 +2898,6 @@ void factory_button_longPress_detected(struct mosquitto *mosq)
 	return;
 }
 
-/* checkIfGatewayServiceisUpdated()
- *
- * \brief : this function check if gateway service update or not.
- *          If updated then give response to selene.
- *
- * \param [in] mosq    : Pointer to instance of mosquitto.
- *
- * \return 0 on success, -1 on failure
- */
-int checkIfGatewayServiceisUpdated(struct mosquitto *mosq) {
-
-	int oldVersion = 0;
-	char c[2];
-	char command[256] = {0};
-	FILE *fptr = NULL;
-	FILE * fp = NULL;
-
-	if( access(FIRMWARE_VERSION_FILE, F_OK ) != -1 ) {
-		if ((fptr = fopen(FIRMWARE_VERSION_FILE, "r")) == NULL)
-		{
-			logBtGattErr ("Failed to open file\n");
-			return -1;
-		} else {
-			// reads text until newline
-			fscanf(fptr,"%[^\n]", c);
-			oldVersion = atoi(c);
-			logBtGattInfo (" oldverison = %d\n", oldVersion);
-			fclose(fptr);
-		}
-	}
-	if ( oldVersion != GROWHOUSE_SERVICE_VERSION ) {
-		if ((fptr = fopen(FIRMWARE_VERSION_FILE, "w+")) == NULL)
-		{
-			logBtGattErr ("Failed to open file\n");
-			return -1;
-		} else {
-			fprintf (fptr, "%d", GROWHOUSE_SERVICE_VERSION);
-			fclose(fptr);
-
-			/* Update mqtt properties with latest firmware version */
-			snprintf (command, sizeof(command), "sed -i 's/softwareVersion.*/softwareVersion=%d.0.0/g' %s", GROWHOUSE_SERVICE_VERSION, MQTT_PROPERTIES_FILE);
-			if( fp = popen(command, "w"))
-			{
-				logBtGattInfo ("Successfully update MQTT properties file\n");
-				pclose(fp);
-			} else {
-				logBtGattErr("Failed to update mqtt properties file");
-			}
-		}
-		sendServiceUpdateResponseToSelene(mosq, "success", "Services upgraded successfully");
-	}
-	return 0;
-}
-
-
 /*
  * Growhouse Server
  * main routine
@@ -3604,8 +2907,6 @@ int main(int argc, char *argv[])
 	char clientid[24];
 	int rc = 0;
 	pthread_t id = 0;
-
-	logBtGattInfo("Growhouse server application started with version : %d\n", GROWHOUSE_SERVICE_VERSION);
 
 	if (pthread_mutex_init(&lock, NULL) != 0)
 	{
@@ -3647,12 +2948,6 @@ int main(int argc, char *argv[])
 			mosquitto_lib_cleanup();
 			logBtGattErr("Unable to connect Mosquitto.\n");
 			return 1;
-		}
-
-		/* Check if firmware is updated then send response to selene */
-		if ( (checkIfGatewayServiceisUpdated(mosq)) == -1 ) {
-			logBtGattErr ("Failed to check firmware version");
-			return -1;
 		}
 
 		/*TODO : Add support for gracefully shoutdown appllication*/

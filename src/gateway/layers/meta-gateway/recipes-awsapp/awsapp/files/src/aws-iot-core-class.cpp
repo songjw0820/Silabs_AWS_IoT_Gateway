@@ -102,6 +102,9 @@ int AWSIoTCore::ParseCreateGatewayResponse(std::string payload)
 {
 	rapidjson::Document data;
 	data.Parse(payload.c_str());
+#ifdef DEBUG
+	LOG_INFO("Payload: %s", payload.c_str());
+#endif
 	LOG_INFO("Parsing response.....");
 	this->UpdateConfigFile("thingName", data["thing"]["thingName"].GetString());
 	//this->UpdateConfigFile("certificateArn", data["certificates"]["certificateArn"].GetString());
@@ -174,51 +177,49 @@ void print(const rapidjson::Value &json)
 *
 * @return 
 */
-rapidjson::Value AWSIoTCore::ParseCreateSensorResponse(std::string payload)
+rapidjson::Document AWSIoTCore::ParseCreateSensorResponse(std::string payload)
 {
 	rapidjson::Document d;
 	d.Parse(payload.c_str());
-	#ifdef DEBUG	
-		LOG_INFO("Payload: %s", payload.c_str());
-	#endif
+#ifdef DEBUG
+	LOG_INFO("Payload: %s", payload.c_str());
+#endif
 	LOG_INFO("Parsing the response....");
-        rapidjson::Document data;
-        std::ofstream outfile;
-        FILE* fp = fopen(CONFIG_FILE, "r+");
-        char readBuffer[65536];
+	rapidjson::Document data;
+	std::ofstream outfile;
+	FILE* fp = fopen(CONFIG_FILE, "r+");
+	char readBuffer[65536];
 
-        rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
-        data.ParseStream(is);
-        fclose(fp);
+	rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
+	data.ParseStream(is);
+	fclose(fp);
 
-	rapidjson::Value sensorId(rapidjson::kArrayType);
-        for (rapidjson::SizeType i = 0; i < d["thing"].Size(); i++) {
-
-        	rapidjson::Value device(rapidjson::kObjectType);
-		sensorId.PushBack(rapidjson::Value().SetString(d["thing"][i]["thingName"].GetString(), data.GetAllocator()), data.GetAllocator()); //Create a sensorId array to return
+	rapidjson::Document retDevice;
+	for (rapidjson::SizeType i = 0; i < d["thing"].Size(); i++) {
+		rapidjson::Value device(rapidjson::kObjectType);
+		retDevice.CopyFrom(d["thing"][i], retDevice.GetAllocator());
 		device.AddMember("sensorId", d["thing"][i]["thingName"], data.GetAllocator());
-        	device.AddMember("eui64", d["thing"][i]["eui64"], data.GetAllocator());
-        	device.AddMember("thingId", d["thing"][i]["thingId"], data.GetAllocator());
-        	device.AddMember("thingArn", d["thing"][i]["thingArn"], data.GetAllocator());
-        	data["endDevices"].PushBack(device, data.GetAllocator());
-		#ifdef DEBUG
-			print(device);
-		#endif
-        }
-	#ifdef DEBUG
-		print(sensorId);
-	#endif
-        fp = fopen(CONFIG_FILE, "w"); // non-Windows use "w"
+		device.AddMember("eui64", d["thing"][i]["eui64"], data.GetAllocator());
+		device.AddMember("thingId", d["thing"][i]["thingId"], data.GetAllocator());
+		device.AddMember("thingArn", d["thing"][i]["thingArn"], data.GetAllocator());
+#ifdef DEBUG
+		print(device);
+#endif
+		data["endDevices"].PushBack(device, data.GetAllocator());
+#ifdef DEBUG
+		print(retDevice);
+#endif
+	}
+	fp = fopen(CONFIG_FILE, "w"); // non-Windows use "w"
 	char writeBuffer[65536];
-        rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
+	rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
 
-        rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
-        data.Accept(writer);
+	rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+	data.Accept(writer);
 
-        fclose(fp);
+	fclose(fp);
 	LOG_INFO("Updated the config file with sensor details...");
-        return sensorId;
-	
+	return retDevice;
 }
 
 /**

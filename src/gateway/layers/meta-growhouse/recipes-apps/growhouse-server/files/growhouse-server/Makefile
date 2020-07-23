@@ -9,11 +9,11 @@ growhouse-server : growhouse-server.o factory-reset-monitor.o end-device-monitor
 	${CC} $^ -o $@ -lmosquitto -lcjson -lpthread -lrt $(LINKER_FLAGS)
 
 growhouse-server.o : growhouse-server.c
-	${CC} -c $< -o $@
+	${CC} $(CFLAGS) -c $< -o $@
 factory-reset-monitor.o : factory-reset-monitor.c
-	${CC} -c $< -o $@
+	${CC} $(CFLAGS) -c $< -o $@
 end-device-monitor.o : end-device-monitor.c
-	${CC} -c $< -o $@
+	${CC} $(CFLAGS) -c $< -o $@
 
 clean :
 	-rm -f *.o growhouse-server

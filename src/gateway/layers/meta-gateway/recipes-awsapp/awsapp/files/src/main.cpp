@@ -145,7 +145,7 @@ int createThing(struct mosquitto *mosq, const struct mosquitto_message *message)
                                 rc = core->ParseCreateGatewayResponse(response);
                                 rapidjson::Value resp(rapidjson::kObjectType);
                                 resp.AddMember("result", "success", document.GetAllocator());
-                                resp.AddMember("statusMessage", "Successfully registered device", document.GetAllocator());
+                                resp.AddMember("statusMessage", "Successfully Registered Gateway", document.GetAllocator());
 				auto gatewayId = core->ReadConfigFile("gatewayId");
 				resp.AddMember("gatewayId", rapidjson::Value().SetString(gatewayId.c_str(), document.GetAllocator()), document.GetAllocator());
                                 /* Publish to growhouse-server*/
@@ -176,16 +176,17 @@ int createThing(struct mosquitto *mosq, const struct mosquitto_message *message)
                                 }
                         }
 		}
-		else if(document[i]["deviceType"] == DEVICE_TYPE_SENSOR) 
+		else if(document[i]["deviceType"] == DEVICE_TYPE_SENTIMATE)
 		{
 			LOG_INFO("Create sensor thing call");
 			auto response = core->CallCreateThingAPI((char *) message->payload);
 			if(response != "ERR") {
-                                auto sensorId = core->ParseCreateSensorResponse(response);
+                                auto device = core->ParseCreateSensorResponse(response);
                                 rapidjson::Value resp(rapidjson::kObjectType);
                                 resp.AddMember("result", "success", document.GetAllocator());
                                 resp.AddMember("statusMessage", "Successfully registered device", document.GetAllocator());
-                                resp.AddMember("sensorId", sensorId, document.GetAllocator());
+                                resp.AddMember("sensorId", device["thingName"], document.GetAllocator());
+                                resp.AddMember("eui64", device["eui64"], document.GetAllocator());
                                 /* Publish to growhouse-server*/
                                 rapidjson::StringBuffer jsonResponse;
                                 rapidjson::Writer<rapidjson::StringBuffer> writer(jsonResponse);

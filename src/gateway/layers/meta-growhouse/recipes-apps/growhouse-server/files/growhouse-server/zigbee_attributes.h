@@ -136,6 +136,7 @@ typedef struct deviceTypeInfo {
 
 /* TODO : Add LED Node and SCM Device info*/
 DEVICETYPE deviceTypeArray[] = {
+	{DEVICE_ID_TEMPERATURE_SENSOR,"sentimate"},
 	{DEVICE_TYPE_SOIL_NODE,"SoilNode"},
 	{DEVICE_TYPE_LIGHT_SHIELD,"LightShield"},
 	{DEVICE_TYPE_CONTACT_SENSOR,"ContactSensor"},
