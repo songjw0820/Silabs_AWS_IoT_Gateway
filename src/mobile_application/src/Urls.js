@@ -17,6 +17,9 @@ export const WEB_SOCKET_URL = production ? PRODUCTION_WEBSOCKET_URL : LOCAL_WEBS
 
 export const BASE_URL = production ? VM_URL : LOCAL_WEB_APP_URL;
 
+export const DELETE_GROWAREA = 'https://bym6ctlh6e.execute-api.us-east-2.amazonaws.com/dev/deletething';
+export const GET_USER='https://bym6ctlh6e.execute-api.us-east-2.amazonaws.com/dev/getuser/';
+
 export const GET_SERVER_VERSION = BASE_URL + '/release/version';
 export const GET_ALL_FACILITIES = BASE_URL + '/facilities';
 export const GET_ALL_CONTAINERS = BASE_URL + '/containers';
@@ -31,7 +34,7 @@ export const VERIFY_USER = BASE_URL + '/users/token';
 export const INTERNAL_GATEWAY_REGISTRATION_URL = BASE_URL + '/growareas';
 export const INTERNAL_DEVICE_REGISTRATION_URL = BASE_URL + '/devices';
 export const DELETE_ASSIGNEE_GROWAREA = BASE_URL + '/growareas/assignee';
-export const DELETE_GROWAREA = BASE_URL + '/growareas';
+//export const DELETE_GROWAREA = BASE_URL + '/growareas';
 export const DELETE_DEVICE = BASE_URL + '/devices';
 export const GET_DASHBOARD_COUNT = BASE_URL + '/count';
 export const GET_DASHBOARD_ALERT = BASE_URL + '/profilealert/user'

@@ -2,7 +2,7 @@ import { bleDebug } from '../app.json';
 import { Platform } from 'react-native';
 
 
-//export const BLE_RESPONSE_STATUS = '#acd373'
+//export const PRIMARY_COLOR = '#acd373'
 export const PRIMARY_COLOR = '#ff9900'
 export const LIGHT_GREY_COLOR = '#ebebeb'
 export const WHITE_BACKGROUND_COLOR = '#F5FCFF'
@@ -49,6 +49,7 @@ export const KNOWN_BLE_CHARACTERISTICS = {
   CHAR_DEVICE_DISCOVER_PROVISION_UUID: bleDebug ? '0000fff2' : '00003a37',
   CHAR_DEVICE_PROVISION_CALLBACK_UUID: bleDebug ? '0000fff4' : '00003a39',
   CHAR_GATEWAY_CONNECTIVITY: bleDebug ? '0000fff4' : '00003a39'
+  CHAR_GATEWAY_DELETION: bleDebug ? '0000fff4' : '00003a40'
 }
 
 

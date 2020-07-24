@@ -4,7 +4,7 @@
   "displayName": "EFR32 IoT Gateway",
   "version": "1.0.23",  
   "selene": "0.0.0",
-  "gateway_discovery_name_prefix": "GH_gw_",
+  "gateway_discovery_name_prefix": "EFR32_gw_",
   "allowExceptionsInDevMode": true,
   "production": true,
   "debug": false,
