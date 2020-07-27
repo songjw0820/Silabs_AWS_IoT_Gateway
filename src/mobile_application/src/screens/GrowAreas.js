@@ -61,6 +61,7 @@ class GrowAreas extends Component {
       isContanerFetched: false,
       users: [],
       gateways: [],
+      sensors:[],
       curerentUser: '',
       seleneVersion: '',
       isGotAlreadyRegistredGateway: false
@@ -76,13 +77,14 @@ class GrowAreas extends Component {
     this.visible = true;
     this.forceUpdate();
 
-    AsyncStorage.multiGet(['accessToken', 'APPLE_LOGGED_IN', 'userEmail','email']).then(response => {
+    AsyncStorage.multiGet(['accessToken', 'APPLE_LOGGED_IN', 'userEmail','email','sensorList']).then(response => {
       let token = response[0][1];
       let appleKey = response[1][1];
       let currentUser = response[2][1];
       let email = response[3][1];
+      let sensors = JSON.parse(response[4][1]);
       
-      this.setState({ token, appleKey, currentUser,email}, () => {
+      this.setState({ token, appleKey, currentUser,email,sensors}, () => {
        
       });
     }).catch((e) => {
@@ -211,7 +213,7 @@ class GrowAreas extends Component {
   }
 
   showGatewayDiscoveryModalForDeleteGateway(visible) {
-    this.props.uiStartLoading();
+    this.props.uiStartLoading("Deleting gateway....");
     if (visible) {
       this.gatewayCharacteristics = {};
       const subscription = this.props.bleManager.onStateChange((state) => {
@@ -477,7 +479,7 @@ class GrowAreas extends Component {
            console.log("set timeout called");
            this.props.bleManager.stopDeviceScan();
            this.props.uiStopLoading();
-           Alert.alert('Gateway not available over BLE', 'Are you sure you want to force delete ?',
+           Alert.alert('Gateway is not reachable at this time.','Factory reset will be required after deletion Are you sure want to do Force delete of Gateway?',
                 [
                  {
                    text: 'Cancel', onPress: () => {
@@ -486,7 +488,7 @@ class GrowAreas extends Component {
                  },
                  {
                    text: 'Delete', onPress: async() => {
-                    this.props.uiStartLoading();
+                    this.props.uiStartLoading("Deleting gateway from AWS cloud..");
                     let url = Urls.DELETE_GROWAREA;
                     console.log("payload for gateway delete ---:"+JSON.stringify(payload));
                     try{
@@ -534,7 +536,7 @@ class GrowAreas extends Component {
               Promise.resolve(requestLocationPermission())
                 .then(sources => {
                   this.props.uiStopLoading();
-                  this.showGatewayDiscoveryModal(true);
+                  this.showGatewayDiscoveryModal(false);
                   return;
                 }).catch(error => {
                   this.props.uiStopLoading();
@@ -553,11 +555,11 @@ class GrowAreas extends Component {
               RNAndroidLocationEnabler.promptForEnableLocationIfNeeded({ interval: 10000, fastInterval: 5000 })
                 .then(data => {
                   this.props.uiStopLoading();
-                  this.showGatewayDiscoveryModal(true);
+                  this.showGatewayDiscoveryModal(false);
                   return;
                 }).catch(error => {
                   this.props.uiStopLoading();
-                  this.showGatewayDiscoveryModal(true);
+                  this.showGatewayDiscoveryModal(false);
                   return;
                 });
             }
@@ -602,11 +604,19 @@ setGatewayAfterDeletion(gatewayId)
             console.log('error in saving list of gateway to storage', error);
 
         })
+    let sensors=this.state.sensors;
+    let filteredSensorList = sensors.filter((item) => item.gatewayId !== gatewayId);
+    AsyncStorage.setItem('sensorList',JSON.stringify(filteredSensorList)).then(() => {
+    this.setState({sensors:filteredSensorList});
+     }).catch((error) => {
+         console.log('error in saving list of sensors to  local storage', error);
+        })
+
 }
 
 async deleteGatewayAPI(payload,device)
 {
-  this.props.uiStartLoading();
+  this.props.uiStartLoading("Deleting gateway from AWS cloud..");
   let url = Urls.DELETE_GROWAREA;
   console.log("payload for gateway delete ---:"+JSON.stringify(payload));
   try{
@@ -1140,6 +1150,7 @@ async deleteGatewayAPI(payload,device)
           selectedGrowArea: {
             id: growArea.gatewayId,
             name: growArea.gatewayName,
+            macId: growArea.macAddress,
           },
           gateway: growArea,
         },
@@ -1286,7 +1297,12 @@ async deleteGatewayAPI(payload,device)
    
 
     if (this.props.isLoading) {
-      growAreasList = <View style={styles.activityIndicator}><ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} /></View>;
+      //growAreasList = <View style={styles.activityIndicator}><ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} /></View>;
+      growAreasList=(
+            <View style={styles.activityIndicator}>
+              <ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} /><Text style={{ margin: 4, fontWeight: "bold" }}>{this.props.isMessage}</Text>
+             </View>
+           );
     } else if (listData.length === 0) {
       growAreasList = (
         <ScrollView contentContainerStyle={styles.activityIndicator}
@@ -1684,6 +1700,7 @@ mapStatesToProps = state => {
     //containersByFacilityId: state.root.containersByFacilityId,
    // growareasByContainerId: state.root.growareasByContainerId,
     isLoading: state.ui.isLoading,
+    isMessage: state.ui.isMessage,
     registrationState: state.ui.registrationState,
    // gatewayHId: state.root.gatewayHId,
    // apiKey: state.root.apiKey,
@@ -1709,7 +1726,7 @@ mapDispatchToProps = dispatch => {
   onGetAllGateways: (token, containerId, inBackground, appleKey) => {},
   onDeleteGateway: (payload) => dispatch(deleteGateway(payload)),
   onGatewayDeletionResponse: (flag) => dispatch(deleteGatewayResponse(flag)),
-  uiStartLoading : () => dispatch(uiStartLoading()),
+  uiStartLoading : (message) => dispatch(uiStartLoading(message)),
   uiStopLoading : () => dispatch(uiStopLoading())
   }
 };

@@ -1,8 +1,9 @@
 import { UI_START_LOADING, UI_STOP_LOADING, UI_REGISTRATION_PROCESS, COUNT_UI_START_LOADING, COUNT_UI_STOP_LOADING } from './actionTypes';
 
-export const uiStartLoading = () => {    
+export const uiStartLoading = (message) => {
     return {
-        type: UI_START_LOADING
+        type: UI_START_LOADING,
+        payload: message
     };
 };
 

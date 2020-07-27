@@ -11,7 +11,7 @@ import { displayName as appName, debug, bleDebug, liveChartDebug, deviceDiscover
 import { connect } from 'react-redux';
 import { BleManager } from 'react-native-ble-plx';
 import {
-  setBleManager, addBleDevice, removeBleDevice, clearCurrentData, authSetUser, removeBleDevicefromDevice, deleteDeviceResponse, deleteDevice
+  setBleManager, addBleDevice, removeBleDevice, authSetUser,uiStartLoading,uiStopLoading,removeBleDevicefromDevice
 } from '../store/actions/rootActions';
 
 
@@ -50,6 +50,7 @@ class Devices extends Component {
   onTimeRegistredDevices = 0;
   discoonecFromCancel = false;
   GatewayMacID = null;
+  timeOutValue = null;
 
   constructor(props) {
       super(props);
@@ -66,7 +67,6 @@ class Devices extends Component {
         deviceRegistrationModalVisible: false,
         callbackRegistredDevices: 0,
         isRegistrationProcessCompleted: false,
-        ch1set: false,
         showCancelButton: false,
         waitingDeviceLoader: false,
         sensors: [],
@@ -110,7 +110,6 @@ class Devices extends Component {
 
           AsyncStorage.getItem('sensorList').then(response => {
               sensors=JSON.parse(response)
-
               this.setState( { sensors})
           }).catch((e) => {
               console.log('error in getting asyncStorage\'s item:', e.message);
@@ -119,12 +118,10 @@ class Devices extends Component {
     }
 
      _onRefresh = () => {
-      this.props.onClearCurrentData();
       AsyncStorage.getItem('accessToken').then((authToken) => {
          this.setState({ refreshing: true, searching: false, filterKey: '', token: authToken });
          this.getSensorList();
          this.setState({ refreshing: false, calledGetCurrentData: true });
-
         console.log(JSON.stringify(this.props.deviceTypes));
 
       })
@@ -192,7 +189,318 @@ class Devices extends Component {
         });
       }
     }
+    async deleteSensorAPI(payload,device,sensorId,eui64)
+    {
+      let url = Urls.DELETE_GROWAREA;
+      this.props.uiStartLoading("Deleting Selected Sensor");
+      console.log("payload for sensor delete ---:"+JSON.stringify(payload));
+      try{
+            const response = await fetch(url,{ method: "POST",headers: {'Accept': 'application/json','Content-Type' : 'application/json' },
+                    body: JSON.stringify(payload)})
+            console.log("res---"+JSON.stringify(response));
+            if(response.ok)
+            {
+              const msg = await response.json();
+              console.log("response in json---"+msg);
+             this.setSensorListAfterDeletion(sensorId);
+              this.askForService(device,eui64);
+            }
 
+            else
+            {
+              this.props.uiStopLoading();
+              alert("error received from AWS API");
+            }
+          }catch(err)
+          {
+            this.props.uiStopLoading();
+            alert(err.message);
+          }
+      }
+
+      setSensorListAfterDeletion(sensorId)
+      {
+        let sensors=this.state.sensors;
+        let filteredList = sensors.filter((item) => item.sensorId !== sensorId);
+        AsyncStorage.setItem('sensorList',JSON.stringify(filteredList)).then(() => {
+          this.setState({sensors:filteredList});
+          }).catch((error) => {
+                  console.log('error in saving list of sensors to  local storage', error);
+
+              })
+         console.log('Delete Sensor from sensor list');
+        alert("Sensor deleted Successfully");
+        this.props.uiStopLoading();
+        this._onRefresh();
+      }
+
+        askForService = (device,eui64) => {
+          console.log("Discovering services and characteristics...");
+          this.setState({
+            deviceDiscoveryModalVisible: false,
+            bleMessage: 'Discovering services and characteristics...',
+            waitingDeviceLoader: false
+          })
+          device.discoverAllServicesAndCharacteristics()
+            .then((device) => {
+              console.log("DeviceId:::::::::" + device.id);
+              this.deviceCharacteristics[device.id] = {};
+              this.deviceCharacteristics[device.id]['mtu'] = device.mtu;
+              device.services().then(services => {
+                services = services.filter(this.isKnownService);
+                console.log("Known Services size:" + services.length)
+                if (services.length === 0) {
+                  console.log("No known services found in connected device.");
+                  this.setState({
+                    bleMessage: 'Required services not found. Disconnecting from device..',
+                    waitingDeviceLoader: false
+                  })
+                  device.cancelConnection();
+                }
+                else {
+                  this.setState({
+                    bleMessage: 'Services discovered..',
+                    waitingDeviceLoader: false
+                  })
+                }
+                services.forEach((service, i) => {
+                  service.characteristics().then(characteristics => {
+                    console.log("Service UUID:" + service.uuid);
+                    console.log("Initial characteristics size:" + characteristics.length);
+                    characteristics = characteristics.filter((characteristic) => {
+
+                      characteristicPrefix = this.isKnownCharacteristic(characteristic);
+                      if (characteristicPrefix) {
+                        console.log("Characteristics UUID:" + characteristic.uuid);
+                        this.deviceCharacteristics[device.id][characteristicPrefix] = characteristic;
+                        return true;
+                      }
+                    });
+                    console.log("After filtering characteristics size:" + characteristics.length);
+
+                    if (i === services.length - 1) {
+                      console.log("deviceCharacteristics List:", JSON.stringify(Object.keys(this.deviceCharacteristics[device.id])));
+                      const dialog = Object.values(this.deviceCharacteristics[device.id]).find(
+                        characteristic => characteristic.isWritableWithResponse || characteristic.isWritableWithoutResponse
+                      )
+                      if (!dialog) {
+                        console.log("No writable characteristic");
+                        this.setState({
+                          bleMessage: 'Required characteristics not found. Disconnecting from sensor..',
+                          waitingDeviceLoader: false
+                        })
+                        device.cancelConnection();
+                      }
+                      else {
+                        this.setState({
+                          bleMessage: 'Characteristics discovered..',
+                          waitingDeviceLoader: true
+                        })
+                        console.log("Opening registration modal..")
+
+                        var deviceDeletionCharFound = false;
+                        console.log('In Deletion Service Characteristic......................');
+                        Object.keys(this.deviceCharacteristics[device.id]).every((characteristicPrefix) => {
+
+                          if (characteristicPrefix === Constant.KNOWN_BLE_CHARACTERISTICS.CHAR_GATEWAY_DELETION) {
+                             this.deviceDeleteChar = this.deviceCharacteristics[device.id][characteristicPrefix];
+                             deviceDeletionCharFound = true;
+                           }
+                            return !(deviceDeletionCharFound)
+
+                          });
+                          if (deviceDeletionCharFound) {
+                             console.log('Deleting Sensor service found....................');
+                             this.setState({ deviceDiscoveryModalVisible: false, waitingDeviceLoader: false});
+                             this.sendSensorDeletionPayload(this.deviceDeleteChar,eui64,device);
+                          }
+                        else {
+                          alert("One of the required characteristic for deletion of sensor not found in connected gateway. Disconnecting..");
+                        }
+                      }
+                    }
+                  })
+                })
+              })
+            })
+            .catch((error) => {
+                this.props.uiStopLoading();
+              if (error.errorCode === 205) {
+                console.log("ErrorMessage:" + error.message);
+                this.props.onRemoveDevice(device.id);
+                alert('Unable to connect device......');
+              }
+              else {
+                this.setState({
+                  deviceDiscoveryModalVisible: false,
+                  bleMessage: 'Error: Unable to connect to Gateway. Please try adding sensor again.',
+                  waitingDeviceLoader: false
+                })
+                console.log("Error: " + error.message)
+                console.log("ErrorCode:" + error.errorCode)
+                device.cancelConnection().catch(error => {
+                  console.log("Sensor is already disconnected." + error.message);
+                });
+              }
+            })
+
+        }
+     sendSensorDeletionPayload(characteristic,sensor,device)
+      {
+        let payload = [
+          {
+          eui64: sensor,
+          deviceType: "sentimate"
+          }
+        ];
+      console.log("Checking characristics for send payload to BLE");
+      console.log("sensorId:" + sensor);
+
+        if(characteristic){
+          this.writeCharacteristics(characteristic, payload, (this.deviceCharacteristics[device.id].mtu - 3), 'sendDeletionOfSensor');
+          console.log('Sensor deleted successfully....Data has been sent to connected gateway for deletion');
+          this._onRefresh();
+        } else {
+          return true;
+        }
+      }
+
+    showDeviceDiscoveryModalForDeletionOfSensor(visible, inBackground,sensorId,eui64) {
+          console.log('flags', visible, inBackground);
+
+          if (visible) {
+            this.props.uiStartLoading('Deleting Selected Sensor');
+            const subscription = this.props.bleManager.onStateChange((state) => {
+              if (state === 'PoweredOn') {
+                if (!inBackground) this.setState({ deviceDiscoveryModalVisible: false, waitingDeviceLoader: false });
+                console.log("Checking for gateway connection");
+
+                console.log('id', this.GatewayMacID, this.growAreaId);
+                console.log('Total gateways Devices connected----------------', this.props.bleDevices);
+                payload = [{"gatewayId": this.growAreaId,"sensorId":sensorId,"deviceType":"sentimate"}];
+                if (this.growAreaId) {
+                     console.log('in this.pros.----------------', this.props.bleDevices[this.GatewayMacID]);
+
+                     if (this.props.bleDevices[this.GatewayMacID]) {
+                       this.device = this.props.bleDevices[this.GatewayMacID];
+                       console.log("Gateway found in redux..", this.device);
+                        Promise.resolve(this.device.isConnected)
+                                 .then((connected) => {
+                                   if (connected) {
+                                    if (!inBackground) this.setState({ deviceDiscoveryModalVisible: false, waitingDeviceLoader: false });
+                                    console.log("Already connected with Gateway");
+                                    console.log('in this.pros----------------', this.props.bleDevices);
+                                    this.setState({ deviceDiscoveryModalVisible: false, waitingDeviceLoader: false });
+                                     this.deleteSensorAPI(payload,this.device,sensorId,eui64);
+                                   }
+                                   else {
+                                         this.timeOutValue = setTimeout(() => {
+                                               this.setState({ deviceDiscoveryModalVisible: false, waitingDeviceLoader: false });
+                                               this.props.uiStartLoading("Deleting Selected Sensor");
+                                               this.factoryResetDevice(payload,sensorId);
+                                         }, 10000)
+                                          console.log("Scanning for gateway..")
+                                          this.props.uiStopLoading();
+                                          this.scanAndConnectForDeleteSensor(inBackground,payload,sensorId,eui64);
+                                   }
+                                 });
+                      }
+                     else
+                     {
+                        this.timeOutValue = setTimeout(() => {
+                                this.setState({ deviceDiscoveryModalVisible: false, waitingDeviceLoader: false });
+                                this.props.uiStartLoading("Deleting Selected Sensor");
+                                this.factoryResetDevice(payload,sensorId);
+                        }, 10000)
+                        this.props.uiStopLoading();
+                        console.log("Scanning for gateway..")
+                        this.scanAndConnectForDeleteSensor(inBackground,payload,sensorId,eui64);
+
+                     }
+                 }
+                 else
+                 {
+                       this.timeOutValue = setTimeout(() => {
+                       this.setState({ deviceDiscoveryModalVisible: false, waitingDeviceLoader: false });
+                                  this.props.uiStartLoading("Deleting Selected Sensor");
+                                this.factoryResetDevice(payload,sensorId);
+                       }, 10000)
+                       this.props.uiStopLoading();
+                       console.log("Scanning for gateway..")
+                       this.scanAndConnectForDeleteSensor(inBackground,payload,sensorId,eui64);
+
+                 }
+                subscription.remove();
+              }
+              else if (state === 'PoweredOff') {
+                if (Platform.OS === 'ios') {
+                  Alert.alert('Permission required', appName + ' app wants to use your Bluetooth.. please enable it.', [{ text: 'Ok', onPress: () => { } }], { cancelable: true })
+                }
+                else {
+                  Alert.alert('Permission required', appName + ' app wants to turn on Bluetooth',
+                    [
+                      { text: 'DENY', onPress: () => { }, style: 'cancel' },
+                      {
+                        text: 'ALLOW', onPress: () => {
+                          Promise.resolve(this.props.bleManager.enable('myTransaction'))
+                            .catch(error => { console.log("BluetoothTurnOnError:" + error); });
+                        }
+                      },
+                    ],
+                    { cancelable: true }
+                  )
+                };
+              }
+            }, true);
+          }
+        }
+
+    factoryResetDevice(payload,sensorId)
+    {
+            this.props.uiStopLoading();
+            this.props.bleManager.stopDeviceScan();
+            Alert.alert('Gateway is not reachable at this time.','Factory reset will be required after deletion. Are you sure want to do Force delete of Gateway?',
+            [
+             {
+                text: 'Cancel', onPress: () => {
+                  console.log('delete operation was canceled.');
+                }, style: 'cancel'
+             },
+             {
+                text: 'Delete', onPress: async() => {
+                   this.props.uiStartLoading('Deleting selected Sensor');
+                   let url = Urls.DELETE_GROWAREA;
+                   console.log("payload for Sensor delete ---:"+JSON.stringify(payload));
+                   try{
+                        const response = await fetch(url,{ method: "POST",headers: {'Accept': 'application/json','Content-Type' : 'application/json' },
+                                         body: JSON.stringify(payload)})
+                        console.log("res---"+JSON.stringify(response));
+                        if(response.ok)
+                        {
+                          const msg = await response.json();
+                          console.log("response in json---"+msg);
+                          this.props.uiStopLoading();
+                          alert("Gateway deleted successfully from AWS cloud. Need to Factory reset");
+                          this.setSensorListAfterDeletion(sensorId);
+                          this._onRefresh();
+                        }
+                        else
+                        {
+                          this.props.uiStopLoading();
+                          alert("error received from AWS API");
+                        }
+                   }catch(err)
+                   {
+                      this.props.uiStopLoading();
+                      alert(err.message);
+                   }
+
+                }
+             },
+             ],
+             { cancelable: true }
+            )
+    }
     onRegisterDevicesClick() {
 
       console.log("Register button clicked:" + JSON.stringify(Object.values(this.state.discoveredDevices)));
@@ -223,10 +531,12 @@ class Devices extends Component {
             console.log('this.state.isRegistrationProcessCompleted', this.state.isRegistrationProcessCompleted);
             if (!this.state.isRegistrationProcessCompleted) {
               this.setState({ deviceRegistrationModalVisible: false, isRegistrationProcessCompleted: true, errorCode: 1 })
-              this._onRefresh()
+
               this.onTimeRegistredDevices = 0;
+              this._onRefresh();
+
             }
-          }, (this.onTimeRegistredDevices * 120000))  // set 2 min timer to read response for
+          }, (this.onTimeRegistredDevices * 120000))  // set 2 min timer to read response for sensors.
         }
       }
       else {
@@ -271,14 +581,14 @@ class Devices extends Component {
 
  checkForGatewayConnection = (inBackground) => {
     console.log('id', this.GatewayMacID, this.growAreaId);
-    console.log('gatewauys in redux0-0-0-0-0-0-0-0-0-0-0-0-', this.props.bleDevices);
+    console.log('gateways in redux0-0-0-0-0-0-0-0-0-0-0-0-', this.props.bleDevices);
 
     if (this.growAreaId) {
       console.log('in this.pros.----------------', this.props.bleDevices[this.GatewayMacID]);
 
       if (this.props.bleDevices[this.GatewayMacID]) {
         this.device = this.props.bleDevices[this.GatewayMacID];
-        console.log("Device found in redux..", this.device);
+        console.log("Gateway found in redux..", this.device);
         Promise.resolve(this.device.isConnected)
           .then((connected) => {
             if (connected) {
@@ -552,8 +862,8 @@ class Devices extends Component {
           if (bleDebug) validPayload = JSON.stringify(validPayload);
           if (isJsonString(validPayload)) {
             let device = JSON.parse(validPayload);
-            if (device.hasOwnProperty('sensorId') && !device.hasOwnProperty('eui64'))
-              device.eui64 = device.sensorId.split('-')[1];
+          if (device.hasOwnProperty('sensorId') && !device.hasOwnProperty('eui64'))
+               device.eui64 = device.sensorId.split('-')[1];
             if (device.hasOwnProperty('eui64') && device.hasOwnProperty('sensorId') && this.growAreaId) {
               let payload = {};
               console.log('devicePayload:' + JSON.stringify(device));
@@ -564,10 +874,11 @@ class Devices extends Component {
                 console.log('deviceObj.result------------', device.result);
                 if (deviceObj.hasOwnProperty('deviceName') && deviceObj.hasOwnProperty('deviceType') ) {
 
-                  payload.deviceUId = device.eui64 ;
+                  payload.deviceUId = device.sensorId;
                   payload.device_name = deviceObj.deviceName;
                   payload.device_type = deviceObj.deviceType;
-                  payload.eui64 = device.eui64;
+                  payload.eui64 = deviceObj.eui64;
+                  payload.sensorId= device.sensorId;
                   payload.gatewayId = this.growAreaId;
                   provisionCallbackResponse = payload;
 
@@ -581,7 +892,7 @@ class Devices extends Component {
                 else console.log('sensorTypes not found.')
               }
             } else {
-              console.log('eui64 or sensorId or gatewayid not found.')
+              console.log('eui64 or sensorId or gateway id not found.')
             };
             console.log(JSON.stringify(provisionCallbackResponse), '--------------------', device.result);
             if (Object.keys(provisionCallbackResponse).length > 0 && device.result === Constant.BLE_RESPONSE_STATUS) {
@@ -597,7 +908,6 @@ class Devices extends Component {
                                  this.setState({sensors});
                                  }).catch((error) => {
                                          console.log('error in saving name', error);
-
                                   })
             }
             validPayload = '';
@@ -626,7 +936,7 @@ class Devices extends Component {
       if (!inBackground) {
         this.setState({
           waitingDeviceLoader: true,
-          bleMessage: 'Searching for ' + (this.growAreaName ? "'" + this.growAreaName + "'" : 'Grow house (gateway).')
+          bleMessage: 'Searching for ' + (this.growAreaName ? "'" + this.growAreaName + "'" : 'gateway.')
         })
       }
 
@@ -649,7 +959,7 @@ class Devices extends Component {
                 }).catch(error => {
                   if (!inBackground) {
                     this.setState({
-                      bleMessage: 'Error: Unable to connect to Gateway. Please try adding Device again.',
+                      bleMessage: 'Error: Unable to connect to Gateway. Please try adding Gateway again.',
                       waitingDeviceLoader: false
                     })
                   }
@@ -682,7 +992,7 @@ class Devices extends Component {
             console.log(error.errorCode + ":" + error.message);
             if (!inBackground) {
               this.setState({
-                bleMessage: 'Grow house (gateway) scan failed.',
+                bleMessage: 'Gateway scan failed.',
                 waitingDeviceLoader: false
               })
             }
@@ -720,6 +1030,184 @@ class Devices extends Component {
       this.props.onSetBleManager(new BleManager());
       this.scanAndConnect(inBackground);
     }
+  }
+
+scanAndConnectForDeleteSensor = (inBackground,payload,sensorId,eui64) => {
+    this.props.uiStartLoading('Deleting Selected Sensor');
+    if(this.props.bleManager)
+    {
+      if (!inBackground)
+      {
+              this.setState({
+                deviceDiscoveryModalVisible : false,
+                waitingDeviceLoader: false,
+                bleMessage: 'Searching for ' + (this.growAreaName ? "'" + this.growAreaName + "'" : 'Grow house (gateway).')
+              })
+      }
+
+      console.log("Started device scan...");
+      this.props.bleManager.startDeviceScan(null, null, (error, device) => {
+
+        if (error) {
+            this.props.uiStopLoading();
+          console.log('ErrorCode:' + error.errorCode);
+          this.setState({ modalVisible: false,deviceDiscoveryModalVisible:false });
+          if (error.errorCode === 101) {
+            //Device is not authorized to use BluetoothLE
+            if (Platform.OS === 'ios') {
+              alert(appName + ' app wants to use location services.. please provide access.')
+            }
+            else {
+              Promise.resolve(requestLocationPermission())
+                .then(sources => {
+                  this.showDeviceDiscoveryModalForDeletionOfSensor(true, inBackground,sensorId,eui64);
+                  return;
+                }).catch(error => {
+                  if (!inBackground) {
+                    this.setState({
+                      bleMessage: 'Error: Unable to connect to Gateway. Please try adding Gateway again.',
+                      waitingDeviceLoader: false
+                    })
+                  }
+                  this.scanAndConnectForDeleteSensor(inBackground,payload,sensorId,eui64);
+                });
+            }
+          }
+          else if (error.errorCode === 601) {
+            //Location services are disabled
+            if (Platform.OS === 'ios') {
+              alert(appName + ' app wants to use location services.. please enable it.')
+              if (!inBackground) {
+                this.showDeviceDiscoveryModal(false);
+              }
+            }
+            else {
+            alert(appName + ' app wants to use location services.. please enable it.');
+              RNAndroidLocationEnabler.promptForEnableLocationIfNeeded({ interval: 10000, fastInterval: 5000 })
+                .then(data => {
+                console.log(data);
+                  if (!inBackground) this.showDeviceDiscoveryModalForDeletionOfSensor(true, inBackground,sensorId,eui64);
+                  return;
+                }).catch(error => {
+                   console.log(error);
+                  if (!inBackground) this.showDeviceDiscoveryModalForDeletionOfSensor(true, inBackground,sensorId,eui64);
+                  return;
+                });
+            }
+          }
+          else {
+            console.log(error.errorCode + ":" + error.message);
+            if (!inBackground) {
+              this.setState({
+                bleMessage: 'Gateway scan failed.',
+                waitingDeviceLoader: false
+              })
+              this.props.uiStartLoading("Deleting Selected Sensor");
+              this.factoryResetDevice(payload,sensorId);
+            }
+          }
+          return;
+        }
+
+        if (device.name && device.id) {
+          this.connectedBle = device;
+          console.log("Gateway Name:" + device.name + "\nDeviceId:" + device.id);
+         console.log('Gateway Selected.....',this.props.selectedGrowArea);
+         if(this.props.selectedGrowArea)
+         {
+            if (device.name.indexOf(this.props.selectedGrowArea.macId) !== -1 || bleDebug) {
+                if (bleDebug) this.growAreaUId = device.id;
+
+                clearTimeout(this.timeOutValue);
+                this.props.bleManager.stopDeviceScan();
+                this.props.onSignoutDisconnect(device)
+                console.log("Connecting to Gateway for deletion");
+                this.GatewayMacID = device.id;
+                if (!inBackground) {
+                    this.setState({
+                         waitingDeviceLoader: false
+                    })
+                }
+               this.setState({modalVisible:false, deviceDiscoveryModalVisible : false,waitingDeviceLoader: false});
+               this.tryDeviceConnectionForDeletion(device,inBackground,sensorId,eui64);
+            }
+         }
+         else
+          {
+            clearTimeout(this.timeOutValue);
+            this.props.bleManager.stopDeviceScan();
+            this.props.onSignoutDisconnect(device)
+            console.log("Connecting to Gateway for deletion");
+            this.GatewayMacID = device.id;
+            if (!inBackground) {
+              this.setState({
+                waitingDeviceLoader: false
+              })
+            }
+              this.setState({modalVisible:false, deviceDiscoveryModalVisible : false,waitingDeviceLoader: false});
+              this.tryDeviceConnectionForDeletion(device,inBackground,sensorId,eui64);
+          }
+        }
+      });
+
+
+    }
+    else {
+      this.props.onSetBleManager(new BleManager());
+      this.scanAndConnectForDeleteSensor(inBackground,payload,sensorId,eui64);
+    }
+  }
+  tryDeviceConnectionForDeletion = (device, inBackground,sensorId,eui64) => {
+
+            device.connect()
+              .then((device) => {
+
+                console.log("Gateway connected for Deletion");
+                this.device = device;
+                this.props.onAddDevice(device);
+                console.log("Adding device for deletion of sensor..");
+                console.log('----------start fetching------------------');
+                console.log("Already connected with Gateway");
+                console.log("Connected with Gateway and now sending payload to AWS");
+                if (!inBackground) this.deleteSensorAPI(payload,this.device,sensorId,eui64);
+                return device;
+              })
+              .catch((error) => {
+                this.props.uiStopLoading();
+                if (error.errorCode === 203) {
+                  this.device = device;
+                  this.props.onAddDevice(device);
+                  console.log("Adding device..");
+                 if (!inBackground) this.deleteSensorAPI(payload,this.device,sensorId,eui64);
+                }
+                else if (error.errorCode === 201) {
+                  console.log("Resetting BLE Manager");
+                  if (this.props.manager) {
+                    console.log("111");
+                    this.props.manager.destroy();
+                  }
+                  this.props.onSetBleManager(new BleManager());
+                  this.tryDeviceConnectionForDeletion(device, inBackground);
+                }
+                else {
+                  console.log("Error:" + error.message)
+                  this.setState({
+                    bleMessage: 'Error: Unable to connect to Gateway.',
+                    waitingDeviceLoader: false
+                  })
+                  device.cancelConnection().catch(error => {
+                    console.log("Device is already disconnected." + error.message);
+                    this.setState({
+                      bleMessage: 'Error: Unable to connect to Gateway. Please try adding Sensor again.',
+                      waitingDeviceLoader: false
+                    })
+                    this.props.uiStartLoading("Deleting Selected Sensor");
+                     this.factoryResetDevice(payload,sensorId);
+                  });
+                }
+                return null;
+              })
+
   }
 
   tryDeviceConnection = (device, inBackground) => {
@@ -866,12 +1354,10 @@ class Devices extends Component {
           this.setState({ errorCode: 1 });
           var value = Base64.atob(response.value);
           if (value === '\u0000') {
-//            alert('Gateway is not connected to the cloud')
             this.showDeviceDiscoveryModal(false, false, false, false)
             this.deviceConectivityCharFound = false;
             this.connectivitySubscription.remove();
           } else {
-//            alert('Gateway is connected to the cloud')
             this.deviceConectivityCharFound = false;
             this.connectivitySubscription.remove();
             return {}
@@ -902,35 +1388,50 @@ class Devices extends Component {
             <View style={styles.listItem}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', }}>
 
-                <View style={{ flexDirection: 'column', color: '#fff', width: '60%', marginLeft: 0.5}}>
-                  <Text style={{ alignSelf: 'flex-start', color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{debug ? info.item.eui64 + '-' : ''}{info.item.device_name}</Text>
-                  <Text style={{ alignSelf: 'flex-start', color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{debug ? info.item.eui64 + '-' : ''}{info.item.device_type}</Text>
-                  <Text style={{ color: '#fff', fontSize: 17  }}>{debug ? info.item.id + '-' : ''}{info.item.eui64}</Text>
-                </View>
+                    <View style={{ flexDirection: 'column', color: '#fff', width: '60%', marginLeft: 0.5}}>
+                        <Text style={{ alignSelf: 'flex-start', color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{debug ? info.item.eui64 + '-' : ''}{info.item.device_name}</Text>
+                        <Text style={{ alignSelf: 'flex-start', color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{debug ? info.item.eui64 + '-' : ''}{info.item.device_type}</Text>
+                        <Text style={{ color: '#fff', fontSize: 17  }}>{debug ? info.item.id + '-' : ''}{info.item.eui64}</Text>
+                    </View>
+               </View>
+
+                <View style={{ justifyContent: 'space-evenly', flexDirection: 'row', marginTop: 10, alignItems: 'center', width: '100%' }}>
+                      <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, backgroundColor: '#737373' }}>
+                             <Icon name="history" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff' }} onPress={() => {
+                                   this.openHistoricalChart(info.item);
+                             }} />
+                             <Text style={{ color: '#fff', fontWeight: 'bold', paddingHorizontal: 25, paddingBottom: 5 }}>Chart</Text>
+                      </View>
+
                  <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, backgroundColor: '#737373', justifyContent: 'center' }}>
-                 <MaterialIcon name="delete" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff' }} onPress={() => {
-                 this.deleteDevice(info.item);
-                  }} />
+
+                 <MaterialIcon name="delete" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff' }} onPress={() =>
+                 Alert.alert('Delete Sensor', 'Are you sure you want to delete ' + info.item.device_name + '?',
+                  [
+                    {
+                       text: 'Cancel', onPress: () => {
+                           console.log('delete operation was canceled.');
+                       }, style: 'cancel'
+                    },
+                    {
+                       text: 'Delete', onPress: () => {
+                          this.showDeviceDiscoveryModalForDeletionOfSensor(true,false,info.item.sensorId,info.item.eui64);
+                       }
+                     },
+                  ],
+                  { cancelable: true }
+                )} />
                   <Text style={{ color: '#fff', fontWeight: 'bold', paddingHorizontal: 25, paddingBottom: 5 }}>Delete</Text>
                   </View>
+                 </View>
               </View>
-            </View>
+
           );
         }
         else {
           return (
             <View style={styles.listItem}>
-              <Text>{debug ? info.item.id + '-' : ''}{info.item.device_name}</Text>
-              <TouchableOpacity style={{ flex: 1, height: 20 }} onPress={() => { }} />
-              <Icon name="eye-slash" size={24} style={{ paddingRight: 10 }} onPress={() => {
-                if (liveChartDebug) {
-                  this.openLiveChart(info.item, Urls.LIVE_CHART_HIDS);
-                } else {
-                  alert("Live chart not supported for this device...");
-                }
-              }} /><Icon name="history" size={24} style={{ paddingRight: 10 }} onPress={() => {
-                this.openHistoricalChart(info.item);
-              }} />
+             <Text color="#00ff00">No Sensors found.</Text>
             </View>
           );
         }
@@ -939,16 +1440,26 @@ class Devices extends Component {
 
   render() {
 
-      let growAreaId = this.growAreaId;
+      let growAreaId = this.props.selectedGrowArea ? this.growAreaId : null;
       listData = this.getSensorList() || [];
 
       displayList = [];
+      if(growAreaId != null)
+      {
       if(listData){
             listData.map((listItem,index) => {
                 if(listItem.gatewayId === growAreaId)
                    displayList.push(listItem);
             });
       }
+      }
+      else
+      {
+            listData.map((listItem,index) => {
+                     displayList.push(listItem);
+             });
+      }
+
       let devicesList;
       if (displayList) {
         if (displayList.length !== 0) {
@@ -964,6 +1475,7 @@ class Devices extends Component {
                     <RefreshControl
                       refreshing={this.state.refreshing}
                       onRefresh={this._onRefresh}
+                      colors={['red', 'green', 'blue']}
                     />
                   }
                 />
@@ -977,21 +1489,51 @@ class Devices extends Component {
                           <RefreshControl
                             refreshing={this.state.refreshing}
                             onRefresh={this._onRefresh}
+                            colors={['red', 'green', 'blue']}
                           />
                         }>
               <Text color="#00ff00">No Sensors found.</Text>
 
               </ScrollView>
                 );
-//          devicesList = (
-//            <View style={styles.activityIndicator}><ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} />
-//              <Text color="#00ff00">No Sensors found.</Text>
-//               </View>
-  //        );
         }
-      } else {
-        devicesList = <View style={styles.activityIndicator}><ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} /></View>;
-      }
+        }else {
+                       devicesList = (
+
+                       <ScrollView contentContainerStyle={styles.activityIndicator}
+                                 refreshControl={
+                                   <RefreshControl
+                                     refreshing={this.state.refreshing}
+                                     onRefresh={this._onRefresh}
+                                     colors={['red', 'green', 'blue']}
+                                   />
+                                 }>
+                       <Text color="#00ff00">No Sensors found.</Text>
+
+                       </ScrollView>
+                         );
+                 }
+
+        if (this.props.isLoading) {
+              devicesList = <View style={styles.activityIndicator}><ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} />
+              <Text style={{ margin: 4, fontWeight: "bold" }}>{this.props.isMessage}</Text>
+              </View>;
+           } else if (displayList.length === 0) {
+             devicesList = (
+
+                   <ScrollView contentContainerStyle={styles.activityIndicator}
+                        refreshControl={
+                        <RefreshControl
+                        refreshing={this.state.refreshing}
+                        onRefresh={this._onRefresh}
+                        colors={['red', 'green', 'blue']}
+                        />
+                   }>
+                   <Text color="#00ff00">No Sensors found.</Text>
+
+                  </ScrollView>
+             );
+         }
 
       let deviceDiscoveryContainer = (
         <View style={styles.scanContainer}>
@@ -1011,7 +1553,6 @@ class Devices extends Component {
             <View style={{ alignItems: "center", marginBottom: 6, backgroundColor: Constant.WHITE_BACKGROUND_COLOR }}><Text>{deviceListSize} {deviceListSize === 1 ? 'Device' : 'Devices'} found</Text></View>
             <KeyboardAvoidingView style={{ flex: 1, }} behavior="height" enabled>
               <FlatList
-                // requiresSameParentToManageScrollView
                 removeClippedSubviews={false}
                 keyboardDismissMode='on-drag'
                 data={Object.values(this.state.discoveredDevices)}
@@ -1109,15 +1650,6 @@ class Devices extends Component {
             fontSize: fontSize,
             color: Constant.WHITE_TEXT_COLOR
           }
-        }
-
-        let countObj = {};
-      //  console.log("CountObj found:" + JSON.stringify(this.props.countsByGrowAreaId[this.growAreaId]));
-        if (this.props.countsByGrowAreaId && this.props.countsByGrowAreaId[this.growAreaId] && this.props.countsByGrowAreaId[this.growAreaId][Constant.DEVICES_COUNT] && this.props.countsByGrowAreaId[this.growAreaId][Constant.DEVICES_COUNT][Constant.DEVICE_TYPE_COUNT]) {
-          console.log("Setting countObj")
-          countObj = this.props.countsByGrowAreaId[this.growAreaId][Constant.DEVICES_COUNT][Constant.DEVICE_TYPE_COUNT];
-          console.log("Set....");
-          console.log(JSON.stringify(countObj));
         }
 
         detailBlock = (
@@ -1275,7 +1807,8 @@ const styles = StyleSheet.create({
   activityIndicator: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    color : '#ff9900'
   },
   detailBlock: {
     backgroundColor: '#636363',
@@ -1295,18 +1828,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginRight: 10,
     fontSize: 36,
-    color: Constant.WHITE_TEXT_COLOR
-  },
-  locationTitleInfo: {
-    marginLeft: 10,
-    fontSize: 10,
-    color: Constant.GREY_TEXT_COLOR
-  },
-  locationInfo: {
-    marginLeft: 4,
-    marginRight: 10,
-    fontSize: 12,
-    fontWeight: "bold",
     color: Constant.WHITE_TEXT_COLOR
   },
   roundButton: {
@@ -1351,10 +1872,7 @@ const styles = StyleSheet.create({
     color: Constant.GREY_TEXT_COLOR,
     fontSize: 10
   },
-  detailDeviceCount: {
-    color: Constant.GREY_TEXT_COLOR,
-    fontSize: 30
-  },
+
   scanContainer: {
     flex: 1,
     justifyContent: "center",
@@ -1421,11 +1939,12 @@ mapStatesToProps = state => {
     devices: state.root.devices,
     devicesByGrowAreaId: state.root.devicesByGrowAreaId,
     isLoading: state.ui.isLoading,
+    isMessage: state.ui.isMessage,
     bleDevices: state.ble.bleDevices,
     bleManager: state.ble.bleManager,
     deviceTypes: state.root.deviceTypes,
-    countLoading: state.ui.countLoading,
     registredDevice: state.ble.registredDevice,
+    retry401Count: state.auth.retry401Count,
 
   }
 };
@@ -1439,9 +1958,8 @@ mapDispatchToProps = dispatch => {
     onRemoveDevice: (deviceId) => dispatch(removeBleDevice(deviceId)),
     onSignoutDisconnect: (device) => dispatch(removeBleDevicefromDevice(device)),
     onSetBleManager: (bleManager) => dispatch(setBleManager(bleManager)),
-//    onDeleteDevice: (deviceId, token) => dispatch(deleteDevice(deviceId, token)),
-//    onDeviceDeletionResponse: (flag) => dispatch(deleteDeviceResponse(flag)),
-    onClearCurrentData: () => dispatch(clearCurrentData())
+    uiStartLoading : (message) => dispatch(uiStartLoading(message)),
+    uiStopLoading : () => dispatch(uiStopLoading())
 
   }
 };

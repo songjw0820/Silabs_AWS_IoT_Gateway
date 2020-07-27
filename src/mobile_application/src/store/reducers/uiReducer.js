@@ -17,7 +17,8 @@ const uiReducer = (state = initialState, action) => {
     case UI_START_LOADING:
       return {
         ...state,
-        isLoading: true
+        isLoading: true,
+        isMessage: action.payload
       };
     case UI_STOP_LOADING:
       return {

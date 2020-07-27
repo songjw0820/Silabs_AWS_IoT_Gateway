@@ -111,8 +111,9 @@ class Login extends React.Component {
      isLoading: true
    };
 
-  async componentDidMount() {
+async componentDidMount() {
     const userInfo = await Auth.currentAuthenticatedUser();
+
     let email=JSON.stringify(userInfo.signInUserSession.idToken.payload.email);
     let url = Urls.GET_USER+userInfo.signInUserSession.idToken.payload.email;
     let gatewaylist=[];
@@ -134,22 +135,22 @@ class Login extends React.Component {
           }
         AsyncStorage.setItem('email',email);
         AsyncStorage.setItem('accessToken',JSON.stringify(userInfo.signInUserSession.accessToken.jwtToken)).then((token) => {
-        this.setState({
-          isLoading: false
+            this.setState({
+            isLoading: false
         }); App();
         }).catch((error) => {
               console.log('error in saving name', error);
 
-          })
-    }catch(err)
+        })
+       }catch(err)
       {
         console.log(err.message);
       }
-}
+   }
 
    render() {
      if (this.state.isLoading) {
-       return <View style={styles.container}><Text>Loading...</Text></View>;
+       return <View style={[styles.container,{color:'red'}]}><Text></Text></View>;
      }
      // this is the content you want to show after the promise has resolved
      return <View/>;
