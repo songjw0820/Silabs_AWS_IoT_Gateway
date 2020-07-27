@@ -20,6 +20,7 @@
 #include <mosquitto.h>
 #include <cJSON.h>
 #include <errno.h>
+#include <time.h>
 
 /*TODO Add information about SCM and LED Node*/
 

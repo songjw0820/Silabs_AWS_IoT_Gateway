@@ -70,9 +70,41 @@ int telemetry(struct mosquitto *mosq, const struct mosquitto_message *message)
 {
 	LOG_INFO("Received message for telemetry: %s", (char *)message->payload);
 	auto gatewayId = core->ReadConfigFile("gatewayId");
+
+	rapidjson::Document data;
+	rapidjson::Value payload(rapidjson::kObjectType);
+	data.Parse((char *)message->payload);
+	
+	rapidjson::Document config;
+        FILE* fp = fopen(CONFIG_FILE, "r+");
+        char readBuffer[65536];
+
+        rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
+        config.ParseStream(is);
+        fclose(fp);
+
+	assert(config.IsObject()); 
+
+	auto timestamp = data["timestamp"].GetInt64();
+        auto stringifiedTimestamp = std::to_string(timestamp);
+        LOG_INFO("Timestamp: %ld", timestamp);
+
+	for (rapidjson::SizeType i = 0; i < config["endDevices"].Size(); i++) {
+		if (config["endDevices"][i]["eui64"] == data["eui64"]) {
+			payload.AddMember("gatewayId", config["gatewayId"], data.GetAllocator());
+			payload.AddMember("sensorId", config["endDevices"][i]["sensorId"], data.GetAllocator());
+			payload.AddMember("sensorName", config["endDevices"][i]["sensorName"], data.GetAllocator());
+			//payload.AddMember("timestamp", data["timestamp"], data.GetAllocator());
+			payload.AddMember("timestamp", rapidjson::Value().SetString(stringifiedTimestamp.c_str(), document.GetAllocator()),data.GetAllocator());
+			payload.AddMember(data["attributeName"], data[data["attributeName"].GetString()], data.GetAllocator());
+    		}
+	}	
+	core->print(payload);
+	
 	auto topicName = std::string("gateway/") + std::string(gatewayId.c_str()) + "/telemetry"; 
 	LOG_INFO("Publishing message to topic: %s", topicName.c_str());
-	auto rc = device->Publish(topicName.c_str(), (char *)message->payload);
+	auto stringifiedPayload = core->stringify(payload);
+	auto rc = device->Publish(topicName.c_str(), stringifiedPayload.c_str());
 	return rc;
 }
 
@@ -104,6 +136,7 @@ int deleteThing(struct mosquitto *mosq, const struct mosquitto_message *message)
                                         LOG_INFO("Match found!");
                                         LOG_INFO("Removing sensor details from config file.....");
                                         data["endDevices"].Erase(itr);
+					break;
                                 }
                         }
                 }

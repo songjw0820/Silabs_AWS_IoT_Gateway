@@ -1740,6 +1740,8 @@ static double formatAndAssignValue (char * property , long value) {
 	double formatValue = 0;
 	if (!strncmp(property, "temperatureValue",strlen(property))){
 		formatValue = (double)value/100;
+	} else if (!strncmp(property, "humidity",strlen(property))){
+		formatValue = (double)value/100;
 	} else if (!strncmp(property, "batteryVoltage",strlen(property))){
 		formatValue = (double)value/10;
 	} else if ((!strncmp(property, "soilPh",strlen(property))) || (!strncmp(property, "soilMoisture",strlen(property)))) {
@@ -1803,6 +1805,10 @@ static int onAttributeUpdate (struct mosquitto * mosq , const struct mosquitto_m
 	long moistureAttributeBuffer = 0;
 	double convertedValue = 0;
 	int status = MOSQ_ERR_INVAL;
+	uint64_t ms;
+	uint64_t timestamp;
+	struct timespec spec;
+	bool deviceAlreadyProvisioned = false;
 
 	if ((mosq == NULL) || (message == NULL)) {
 		logBtGattErr ("Invalid pointers\n");
@@ -1879,35 +1885,66 @@ static int onAttributeUpdate (struct mosquitto * mosq , const struct mosquitto_m
 		// Parse buffer and return value string
 		attributeBufferLong = zclParseBufferRaw(attributeDataType, attributeBuffer);
 
+		logBtGattInfo ("attribute_name : %s\n", ZCLAttributeArray[l_count1].attribute_name);
 		convertedValue = formatAndAssignValue(ZCLAttributeArray[l_count1].attribute_name, attributeBufferLong);
 
-		snprintf (property ,sizeof(property), "%c|%s",ZCLDataTypesArray[attributeDataTypeInt].dataFormat, ZCLAttributeArray[l_count1].attribute_name);
+		//snprintf (property ,sizeof(property), "%c|%s",ZCLDataTypesArray[attributeDataTypeInt].dataFormat, ZCLAttributeArray[l_count1].attribute_name);
+		snprintf (property ,sizeof(property), "%s", ZCLAttributeArray[l_count1].attribute_name);
+		//timestamp = time(NULL);
+		clock_gettime(CLOCK_REALTIME, &spec);
+		timestamp = 1000UL * spec.tv_sec;
+		ms = round(spec.tv_nsec / 1.0e6); // Convert nanoseconds to milliseconds
+		if (ms > 999) {
+			timestamp++;
+			ms = 0;
+		}
+		timestamp += ms;
 
+		cJSON_AddStringToObject(telemetryNode , "attributeName", property);
+		cJSON_AddStringToObject(telemetryNode , "eui64", &eui64[2]);
+		cJSON_AddNumberToObject(telemetryNode , "timestamp", timestamp);
 		cJSON_AddNumberToObject(telemetryNode , property, convertedValue);
 	}
-	snprintf (mqttTopic, sizeof(mqttTopic), "selene/mqtt/%s/tel",&eui64[2]);
-	ptr = cJSON_PrintUnformatted(telemetryNode);
-	if (ptr == NULL ) {
-		logBtGattErr ("Failed to parse json\n");
-		cJSON_Delete(node);
-		cJSON_Delete(telemetryNode);
-		return -1;
+	//snprintf (mqttTopic, sizeof(mqttTopic), "selene/mqtt/%s/tel",&eui64[2]);
+	memcpy(mqttTopic, "awsapp/mqtt/tel", sizeof(mqttTopic));
+	logBtGattInfo("checking provisioned device list\n");
+	printProvisionedDeviceList();
+	for (int l_count = 0; l_count < cJSON_GetArraySize(provisionedDeviceList); l_count++) {
+		cJSON *provisionedDeviceObject = cJSON_GetArrayItem(provisionedDeviceList, l_count);
+		char * provisionedEui64String = cJSON_GetObjectItem(provisionedDeviceObject, "deviceUid")->valuestring;
+		if (!strncmp (&eui64[2], provisionedEui64String, strlen(provisionedEui64String))) {
+			deviceAlreadyProvisioned = true;
+			break;
+		}
 	}
-	status = mosquitto_publish(mosq, NULL, mqttTopic , strlen(ptr), ptr, 1, false);
-	if ( status != MOSQ_ERR_SUCCESS){
-		logBtGattErr("could not publish to topic:%s err:%d", mqttTopic, status);
+
+	if (deviceAlreadyProvisioned) {
+		ptr = cJSON_PrintUnformatted(telemetryNode);
+		if (ptr == NULL ) {
+			logBtGattErr ("Failed to parse json\n");
+			cJSON_Delete(node);
+			cJSON_Delete(telemetryNode);
+			return -1;
+		}
+
+
+		status = mosquitto_publish(mosq, NULL, mqttTopic , strlen(ptr), ptr, 1, false);
+		if ( status != MOSQ_ERR_SUCCESS){
+			logBtGattErr("could not publish to topic:%s err:%d", mqttTopic, status);
+			free(ptr);
+			cJSON_Delete(node);
+			cJSON_Delete(telemetryNode);
+			return -1;
+		}
+		logBtGattInfo ("Successfully publish telemetry \"%s\" on topic ::  %s\n", ptr, mqttTopic);
+
+		/* Update device status */
+		if ( clusterId == SOIL_NODE_PH_CLUSTER)
+			updateDeviceStatus(&eui64[2], mosq);
+
 		free(ptr);
-		cJSON_Delete(node);
-		cJSON_Delete(telemetryNode);
-		return -1;
 	}
-	logBtGattInfo ("Successfully publish telemetry \"%s\" on topic ::  %s\n", ptr, mqttTopic);
 
-	/* Update device status */
-	if ( clusterId == SOIL_NODE_PH_CLUSTER)
-		updateDeviceStatus(&eui64[2], mosq);
-
-	free(ptr);
 	cJSON_Delete(node);
 	cJSON_Delete(telemetryNode);
 

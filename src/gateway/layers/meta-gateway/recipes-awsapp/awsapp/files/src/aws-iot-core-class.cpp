@@ -161,7 +161,7 @@ int AWSIoTCore::ParseCreateGatewayResponse(std::string payload)
 
 	return 0;
 }
-void print(const rapidjson::Value &json)
+void AWSIoTCore::print(const rapidjson::Value &json)
 {
         using namespace rapidjson;
         StringBuffer sb;
@@ -199,15 +199,16 @@ rapidjson::Document AWSIoTCore::ParseCreateSensorResponse(std::string payload)
 		rapidjson::Value device(rapidjson::kObjectType);
 		retDevice.CopyFrom(d["thing"][i], retDevice.GetAllocator());
 		device.AddMember("sensorId", d["thing"][i]["thingName"], data.GetAllocator());
+		device.AddMember("sensorName", d["thing"][i]["sensorName"], data.GetAllocator());
 		device.AddMember("eui64", d["thing"][i]["eui64"], data.GetAllocator());
 		device.AddMember("thingId", d["thing"][i]["thingId"], data.GetAllocator());
 		device.AddMember("thingArn", d["thing"][i]["thingArn"], data.GetAllocator());
 #ifdef DEBUG
-		print(device);
+		this->print(device);
 #endif
 		data["endDevices"].PushBack(device, data.GetAllocator());
 #ifdef DEBUG
-		print(retDevice);
+		this->print(retDevice);
 #endif
 	}
 	fp = fopen(CONFIG_FILE, "w"); // non-Windows use "w"

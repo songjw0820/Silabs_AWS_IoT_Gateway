@@ -47,6 +47,7 @@ class AWSIoTCore
 		rapidjson::Document ParseCreateSensorResponse(std::string response);
 		int ClearConfig();
 		std::string GetAmazonRootCACertificate();
+		void print(const rapidjson::Value &json);
 		~AWSIoTCore();
 	private:
 		rapidjson::Document document;
