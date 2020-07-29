@@ -35,6 +35,8 @@ export const LIGHT_NODE_COUNT = 'light_nodes_count';
 export const HUMINITY_NODE_COUNT = 'humidity_nodes_count';
 export const LIGHT_SHIELD_COUNT = 'light_shields_count';
 
+export const DEVICE_TYPE_GATEWAY='gateway';
+
 export const DEFAULT_DEVICE_COUNT = '-'
 
 export const KNOWN_BLE_SERVICES = {

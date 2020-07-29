@@ -118,21 +118,22 @@ async componentDidMount() {
     let url = Urls.GET_USER+userInfo.signInUserSession.idToken.payload.email;
     let gatewaylist=[];
     let sensorlist=[];
+    
     try{
         const response = await fetch(url,{ method: "GET",headers: {'Accept': 'application/json','Content-Type' : 'application/json' }})
         if(response.ok)
           {
             const result = await response.json();
-            console.log("response in json---"+result);
+            console.log("response in json---"+JSON.stringify(result));
             AsyncStorage.setItem('listGateway',JSON.stringify(result['gateways']));
             AsyncStorage.setItem('sensorList',JSON.stringify(result['sensors']));
           }
         else
-          {
+         {
             AsyncStorage.setItem('listGateway',JSON.stringify(gatewaylist));
             AsyncStorage.setItem('sensorList',JSON.stringify(sensorlist));
-            alert('Error occured while featching user info');
-          }
+           alert('Error occured while featching user info');
+         }
         AsyncStorage.setItem('email',email);
         AsyncStorage.setItem('accessToken',JSON.stringify(userInfo.signInUserSession.accessToken.jwtToken)).then((token) => {
             this.setState({
