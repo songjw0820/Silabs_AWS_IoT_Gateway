@@ -5,6 +5,21 @@ SRC_URI += "\
             file://linux-kernel-aws-greengrass.cfg \
            "
 
+# Backport required WiFi fixes from the Linaro WIP branch.
+# https://git.linaro.org/people/loic.poulain/linux.git/log/?h=qcomlt-5.7-wifi
+SRC_URI += "\
+            file://0001-mac80211-add-ieee80211_is_any_nullfunc.patch \
+            file://0001-wcn36xx-disable-HW_CONNECTION_MONITOR.patch \
+            file://0001-wcn36xx-Add-ieee80211-rx-status-rate-information.patch \
+            file://0001-wcn36xx-Fix-multiple-AMPDU-sessions-support.patch \
+            file://0001-wcn36xx-Advertise-beacon-filtering-support-in-bmps.patch \
+            file://0001-wcn36xx-Fix-software-driven-scan.patch \
+            file://0001-wcn36xx-Add-TX-ack-support.patch \
+            file://0001-wcn36xx-Fix-TX-data-path.patch \
+            file://0001-wcn36xx-Fix-power-saving-with-some-APs.patch \
+            file://0001-wcn36xx-Use-sequence-number-allocated-by-mac80211.patch \
+           "
+
 KERNEL_CONFIG_FRAGMENTS_append = " ${WORKDIR}/linux-kernel-aws-greengrass.cfg "
 
 KERNEL_MODULE_AUTOLOAD += "g_serial"
