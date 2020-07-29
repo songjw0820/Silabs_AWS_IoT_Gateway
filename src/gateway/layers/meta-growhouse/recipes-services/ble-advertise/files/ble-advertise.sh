@@ -1,6 +1,9 @@
 #!/bin/sh
 
-# Set ble advertise name as GH_gw_xx:xx:xx:xx:xx:xx
+sleep 5
+rfkill unblock all
+
+# Set ble advertise name as EFR32_gw_xx:xx:xx:xx:xx:xx
 #MAC=$(ip link show eth0 | awk '/ether/ {print $2}')
 
 # Get BLE MAC address from hcitool
@@ -15,16 +18,16 @@ do
 	/bin/echo ${#MAC}=$MAC
 done
 
-NAME="GH_gw_$MAC"
+NAME="EFR32_gw_$MAC"
 BLE_ADV_NAME=$(echo $NAME |  tr -d "\n" | hexdump -v -e '/1 "%02x"')
 
 # 02-length : 01 - flags
 #	      06 - Bit 1 : "LE General Discoverable Mode"
 #		   Bit 2 : "BR/EDR Not Supported."
-# 18-length : 09 - Complete Local Name
+# 1B-length : 09 - Complete Local Name
 #	      $BLE_ADV_NAME - Ble advertise name
 
-HEX_NAME="0201061809$BLE_ADV_NAME"
+HEX_NAME="0201061B09$BLE_ADV_NAME"
 
 /bin/systemctl stop bluetooth
 

@@ -1,7 +1,7 @@
 [Unit]
 Description=Ble advertize service
-After=bluetooth.target
-Requires=bluetooth.target
+After=bluetooth.target systemd-rfkill.service
+Requires=bluetooth.target systemd-rfkill.service
 
 [Service]
 ExecStart=/etc/ble-advertise/ble-advertise.sh
