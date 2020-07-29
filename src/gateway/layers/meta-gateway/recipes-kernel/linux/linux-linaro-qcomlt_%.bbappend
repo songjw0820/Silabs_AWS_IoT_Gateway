@@ -2,6 +2,7 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 SRC_URI += "\
             file://0001-Gateway-DB410C-Added-support-of-CYUSB3610-chip.patch \
+            file://0001-Gateway-DB410C-CYUSB3610-reset-pin.patch \
             file://linux-kernel-aws-greengrass.cfg \
            "
 
@@ -22,7 +23,7 @@ SRC_URI += "\
 
 KERNEL_CONFIG_FRAGMENTS_append = " ${WORKDIR}/linux-kernel-aws-greengrass.cfg "
 
-KERNEL_MODULE_AUTOLOAD += "g_serial"
+KERNEL_MODULE_AUTOLOAD += "g_serial cyusb3610"
 
 #SRC_URI += "\
 #        file://0002-Gateway-DB410C-Added-support-of-CYUSB3610-chip.patch \
