@@ -1,5 +1,13 @@
 #include "aws-iot-device-class.hpp"
 
+awsiotsdk::ResponseCode AWSIoTDevice::ReconnectCallback(awsiotsdk::util::String client_id,
+                                               std::shared_ptr<awsiotsdk::ReconnectCallbackContextData> p_app_handler_data,
+                                               awsiotsdk::ResponseCode reconnect_result)
+{
+        LOG_INFO("Client: %s Reconnect Attempted! ", client_id.c_str());
+        LOG_INFO(" Response: %s", awsiotsdk::ResponseHelper::ToString(reconnect_result).c_str());
+        return awsiotsdk::ResponseCode::SUCCESS;
+}
 
 AWSIoTDevice::AWSIoTDevice()
 {
@@ -35,16 +43,47 @@ AWSIoTDevice::AWSIoTDevice()
                 LOG_INFO("Network Connection Initialized");
         }
 	
-	p_iot_client_ = awsiotsdk::MqttClient::Create(p_network_connection, awsiotsdk::ConfigCommon::mqtt_command_timeout_);
+	awsiotsdk::ClientCoreState::ApplicationReconnectCallbackPtr p_reconnect_handler =
+                std::bind(&AWSIoTDevice::ReconnectCallback,
+                          this,
+                          std::placeholders::_1,
+                          std::placeholders::_2,
+                          std::placeholders::_3);
+
+
+        p_iot_client_ = awsiotsdk::MqttClient::Create(p_network_connection,
+                                                awsiotsdk::ConfigCommon::mqtt_command_timeout_,
+                                                nullptr, nullptr,
+                                                p_reconnect_handler, nullptr,
+                                                nullptr, nullptr,
+                                                nullptr, nullptr);
+
+	//p_iot_client_ = awsiotsdk::MqttClient::Create(p_network_connection, awsiotsdk::ConfigCommon::mqtt_command_timeout_);
+
+
+	awsiotsdk::util::String clientIdTagged = CLIENT_ID_PREFIX;
+        clientIdTagged.append(std::to_string(rand()));
+        std::unique_ptr<awsiotsdk::Utf8String> clientId = awsiotsdk::Utf8String::Create(clientIdTagged);
+	
+        LOG_INFO("Setting auto reconnect for the client....");
+        p_iot_client_->SetAutoReconnectEnabled(true);
+
 
 	LOG_INFO("Trying MQTT Connect");
-        rc = p_iot_client_->Connect(std::chrono::milliseconds(30000), false, awsiotsdk::mqtt::Version::MQTT_3_1_1, std::chrono::seconds(60), awsiotsdk::Utf8String::Create("abhijitclient1"), nullptr, nullptr, nullptr);
+	int count = 1;
+        do {
+                LOG_INFO("Trying now...count: %d", count);
+                rc = p_iot_client_->Connect(std::chrono::milliseconds(30000), false, awsiotsdk::mqtt::Version::MQTT_3_1_1, std::chrono::seconds(60), std::move(clientId), nullptr, nullptr, nullptr);
 
-        LOG_INFO("Response: %s", awsiotsdk::ResponseHelper::ToString(rc).c_str());
-        if(awsiotsdk::ResponseCode::MQTT_CONNACK_CONNECTION_ACCEPTED == rc) {
-                LOG_INFO("MQTT Connection established!");
-        }
-	
+                if(awsiotsdk::ResponseCode::MQTT_CONNACK_CONNECTION_ACCEPTED == rc) {
+                        LOG_INFO("MQTT Connection established!");
+                	LOG_INFO("Response: %s", awsiotsdk::ResponseHelper::ToString(rc).c_str());
+                }
+                else {
+                	LOG_INFO("Response: %s", awsiotsdk::ResponseHelper::ToString(rc).c_str());
+                }
+                count++;
+	} while(count <= MAX_RETRY_COUNT || (awsiotsdk::ResponseCode::MQTT_CONNACK_CONNECTION_ACCEPTED == rc));	
 }
 
 int AWSIoTDevice::Publish(const char * topic, const char * payload)

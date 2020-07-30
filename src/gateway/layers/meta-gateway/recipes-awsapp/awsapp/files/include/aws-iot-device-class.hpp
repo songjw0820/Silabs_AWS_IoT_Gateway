@@ -36,12 +36,18 @@
 #define CONFIG_FILE	"/opt/awsapp/config.json"
 #endif
 
-#define AWS_SDK_DEBUG    1
+#define MAX_RETRY_COUNT    5 // No. of tries for establishing MQTT connection
+#define CLIENT_ID_PREFIX   "EFR32Gateway_"
+
+#define AWS_SDK_DEBUG   0
 
 class AWSIoTDevice
 {
 	public:
 		AWSIoTDevice();
+		awsiotsdk::ResponseCode ReconnectCallback(awsiotsdk::util::String client_id,
+                                           std::shared_ptr<awsiotsdk::ReconnectCallbackContextData> p_app_handler_data,
+                                           awsiotsdk::ResponseCode reconnect_result);
 		int Publish(const char * topic, const char * payload);
 		~AWSIoTDevice();
 	private:

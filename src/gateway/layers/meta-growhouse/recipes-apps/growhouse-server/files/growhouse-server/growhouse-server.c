@@ -1053,10 +1053,29 @@ static int deleteDeviceHandler(struct mosquitto *mosq, const struct mosquitto_me
 	cJSON * data = cJSON_Parse(message->payload);
 	cJSON * elem = NULL;
 	cJSON * eui64DeleteDevice = NULL;
+	cJSON * deviceType = NULL;
 	int length = cJSON_GetArraySize(data);
 	for( int i =0;i<length;i++)
 	{
 		elem = cJSON_GetArrayItem(data, i);
+		deviceType = cJSON_GetObjectItem(elem, "deviceType");
+		if(!strncmp(deviceType->valuestring, "gateway", strlen(deviceType->valuestring)))
+		{
+			logBtGattInfo("Request to delete gateway received....");
+			int lengthProvisionedDevice = cJSON_GetArraySize(provisionedDeviceList);
+			if(lengthProvisionedDevice > 0) {
+				for(int j = 0;j < lengthProvisionedDevice; j++)
+				{
+					logBtGattInfo("Deleting provisioned sensors before deleting gateway.....");
+					cJSON * deviceObject = cJSON_GetArrayItem(provisionedDeviceList, j);
+					cJSON * eui64String = cJSON_GetObjectItem(deviceObject, "deviceUid");
+
+					logBtGattInfo("Deleting sensor: %s", eui64String->valuestring);
+					status = deviceDeletionRequest(mosq, eui64String->valuestring);
+				}
+			}
+			break;
+		}
 		eui64DeleteDevice = cJSON_GetObjectItem(elem, "eui64");
 		logBtGattInfo("Deleting eui64: %s from Zigbee network....\n", eui64DeleteDevice->valuestring);
 		status = deviceDeletionRequest(mosq, eui64DeleteDevice->valuestring);

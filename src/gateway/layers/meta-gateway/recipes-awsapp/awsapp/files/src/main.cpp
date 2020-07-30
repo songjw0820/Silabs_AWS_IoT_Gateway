@@ -88,6 +88,7 @@ int telemetry(struct mosquitto *mosq, const struct mosquitto_message *message)
 	auto timestamp = data["timestamp"].GetInt64();
         auto stringifiedTimestamp = std::to_string(timestamp);
         LOG_INFO("Timestamp: %ld", timestamp);
+        LOG_INFO("Stringified Timestamp: %ld", stringifiedTimestamp);
 
 	for (rapidjson::SizeType i = 0; i < config["endDevices"].Size(); i++) {
 		if (config["endDevices"][i]["eui64"] == data["eui64"]) {
@@ -271,10 +272,12 @@ int main(int argc, char** argv)
 
 	char clientid[24];
 	int rc = 0;
-	
 
 	core = new AWSIoTCore();
-	
+
+	/* initialize random seed: */
+	srand (time(NULL));	
+
 	LOG_INFO("Starting AWSAPP....");
 	auto cert = core->ReadConfigFile("certificatePath");
 	if(cert != "")

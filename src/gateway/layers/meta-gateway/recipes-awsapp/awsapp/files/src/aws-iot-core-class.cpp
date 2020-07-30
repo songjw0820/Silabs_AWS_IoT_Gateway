@@ -78,16 +78,18 @@ int AWSIoTCore::ClearConfig()
         rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
         data.ParseStream(is);
         fclose(fp);
-	data["endDevices"].Erase(data["endDevices"].Begin(), data["endDevices"].End());
-
-        fp = fopen(CONFIG_FILE, "w"); // non-Windows use "w"
-        char writeBuffer[65536];
-        rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
+	if(data["endDevices"].Size() > 0) // Perform Erase operation only if we have some sensors registered
+	{
+		data["endDevices"].Erase(data["endDevices"].Begin(), data["endDevices"].End());
+        	fp = fopen(CONFIG_FILE, "w"); // non-Windows use "w"
+        	char writeBuffer[65536];
+        	rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
 	
-	rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
-        data.Accept(writer);
+		rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+        	data.Accept(writer);
 
-        fclose(fp);
+        	fclose(fp);
+	}
 
 	return 0;
 }
