@@ -55,7 +55,6 @@ AWSIoTDevice::AWSIoTDevice()
                                                 awsiotsdk::ConfigCommon::mqtt_command_timeout_,
                                                 nullptr, nullptr,
                                                 p_reconnect_handler, nullptr,
-                                                nullptr, nullptr,
                                                 nullptr, nullptr);
 
 	//p_iot_client_ = awsiotsdk::MqttClient::Create(p_network_connection, awsiotsdk::ConfigCommon::mqtt_command_timeout_);
