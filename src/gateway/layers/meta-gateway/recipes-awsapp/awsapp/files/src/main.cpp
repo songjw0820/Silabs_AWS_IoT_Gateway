@@ -11,7 +11,7 @@
 // #### Global variables defination ####
 
 AWSIoTCore* core;
-AWSIoTDevice* device;
+AWSIoTDevice* device = NULL;
 struct mosquitto *mosq = NULL;
 rapidjson::Document document;
 std::string groupName = "";
@@ -101,7 +101,20 @@ int telemetry(struct mosquitto *mosq, const struct mosquitto_message *message)
     		}
 	}	
 	core->print(payload);
-	
+
+	if(device == NULL) 
+        {
+        	LOG_INFO("Initializing AWS MQTT connections");
+                device = new AWSIoTDevice();
+                if(count >= MAX_RETRY_COUNT)
+                {
+			LOG_INFO("Failed to establish AWS MQTT connection");
+                        LOG_INFO("Clearing device object...");
+                        delete device;
+			device = NULL;
+			return;
+                }
+        }
 	auto topicName = std::string("gateway/") + std::string(gatewayId.c_str()) + "/telemetry"; 
 	LOG_INFO("Publishing message to topic: %s", topicName.c_str());
 	auto stringifiedPayload = core->stringify(payload);
@@ -253,7 +266,7 @@ int createThing(struct mosquitto *mosq, const struct mosquitto_message *message)
 		}
 	}
 	if(!rc) {
-		if(!device) 
+		if(device == NULL) 
 		{
 			LOG_INFO("Initializing AWS MQTT connections");
 			device = new AWSIoTDevice();
@@ -285,7 +298,13 @@ int main(int argc, char** argv)
 		LOG_INFO("AWS certificates are present...");
 		LOG_INFO("Initializing AWS MQTT Connections...");
 		device = new AWSIoTDevice();
-		
+		if(count >= MAX_RETRY_COUNT)
+		{
+			LOG_INFO("Failed to establish AWS MQTT connection");
+			LOG_INFO("Clearing device object...");
+			delete device;
+			device = NULL;
+		}		
 	} 
 
 	mosquitto_lib_init();
