@@ -6,7 +6,8 @@ import {
 const initialState = {
   isLoading: false,
   countLoading: false,
-  registrationState: 0
+  registrationState: 0,
+  isMessage: ''
 };
 
 const uiReducer = (state = initialState, action) => {
