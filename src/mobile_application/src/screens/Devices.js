@@ -2,9 +2,9 @@ import React, { Component } from 'react';
 import {
   RefreshControl, StyleSheet, Text, View, FlatList, ActivityIndicator, KeyboardAvoidingView,
   TouchableOpacity, Image, Modal, Platform, Alert, PermissionsAndroid, TextInput,
-  ScrollView, Picker, AsyncStorage,Linking
-
+  ScrollView, Picker, AsyncStorage,Dimensions,Linking
 } from 'react-native';
+import  DialogInput  from 'react-native-dialog-input-custom';
 import * as Constant from '../Constant';
 import * as Urls from '../Urls';
 import { displayName as appName, debug, bleDebug, liveChartDebug, deviceDiscoveryTimeout } from './../../app.json';
@@ -13,6 +13,8 @@ import { BleManager } from 'react-native-ble-plx';
 import {
   setBleManager, addBleDevice, removeBleDevice, authSetUser,uiStartLoading,uiStopLoading,removeBleDevicefromDevice
 } from '../store/actions/rootActions';
+import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+
 
 import _ from 'lodash';
 import RNAndroidLocationEnabler from 'react-native-android-location-enabler';
@@ -23,6 +25,8 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { Navigation } from 'react-native-navigation';
 import {WebView} from 'react-native-webview';
+const {width,height} = Dimensions.get('window');
+
 class Devices extends Component {
 
   static get options() {
@@ -51,6 +55,7 @@ class Devices extends Component {
   GatewayMacID = null;
   timeOutValue = null;
   bleDevice=null;
+  isVisible = false;
 
   constructor(props) {
       super(props);
@@ -72,6 +77,7 @@ class Devices extends Component {
         sensors: [],
         chartflag: false,
         gatewayforSensor:'',
+        editedSensor: '',
       };
 
       if (this.props.selectedGrowArea) { // redirect from grow area
@@ -97,14 +103,14 @@ class Devices extends Component {
 
          let growAreaId = this.growAreaId;
 
-         if (growAreaId) {
-            if (growAreaId ? (!this.props.devicesByGrowAreaId[growAreaId] || this.props.devicesByGrowAreaId[growAreaId].length === 0) : this.props.devices.length === 0) {
-                this._onRefresh();
-            }
-         }
-         else if (this.props.devices.length === 0) {
-              this._onRefresh();
-          }
+//         if (growAreaId) {
+//            if (growAreaId ? (!this.props.devicesByGrowAreaId[growAreaId] || this.props.devicesByGrowAreaId[growAreaId].length === 0) : this.props.devices.length === 0) {
+//                this._onRefresh();
+//            }
+//         }
+//         else if (this.props.devices.length === 0) {
+//              this._onRefresh();
+//          }
          })
        }
 
@@ -121,11 +127,13 @@ class Devices extends Component {
     }
 
      _onRefresh = () => {
+     this.props.uiStartLoading("Fetching Sensor Data");
       AsyncStorage.getItem('accessToken').then((authToken) => {
          this.setState({ refreshing: true, searching: false, filterKey: '', token: authToken });
          this.getSensorList();
          this.setState({ refreshing: false, calledGetCurrentData: true });
         console.log(JSON.stringify(this.props.deviceTypes));
+        this.props.uiStopLoading();
 
       })
     }
@@ -386,7 +394,7 @@ class Devices extends Component {
         let payload = [
           {
           eui64: sensor,
-          deviceType: "sentimate"
+          deviceType: Constant.SENSOR_TYPE
           }
         ];
       console.log("Checking characristics for send payload to BLE");
@@ -417,10 +425,9 @@ class Devices extends Component {
 
                 console.log('id', this.GatewayMacID, this.growAreaId);
                 console.log('Total gateways Devices connected----------------', this.props.bleDevices);
-                
                 if (this.growAreaId) {
                      console.log('in this.pros.----------------', this.props.bleDevices[this.GatewayMacID]);
-                     payload = [{"gatewayId": this.growAreaId,"sensorId":sensorId,"deviceType":"sentimate"}];
+                     payload = [{"gatewayId": this.growAreaId,"sensorId":sensorId,"deviceType":Constant.SENSOR_TYPE}];
                      if (this.props.bleDevices[this.GatewayMacID]) {
                        this.device = this.props.bleDevices[this.GatewayMacID];
                        console.log("Gateway found in redux..", this.device);
@@ -451,7 +458,7 @@ class Devices extends Component {
                  }
                  else
                  {
-                      payload = [{"gatewayId": this.state.gatewayforSensor,"sensorId":sensorId,"deviceType":"sentimate"}];
+                      payload = [{"gatewayId": this.state.gatewayforSensor,"sensorId":sensorId,"deviceType":Constant.SENSOR_TYPE}];
                       console.log("payload for sensor delete --"+JSON.stringify(payload)); 
                       this.timeOutValue = setTimeout(() => {
                        this.setState({ deviceDiscoveryModalVisible: false, waitingDeviceLoader: false });
@@ -1431,6 +1438,67 @@ gatewayDetailsContainer =()=>{
     }
 
   }
+ showRenameModal = () => {
+
+    this.isVisible = !this.isVisible;
+
+}
+async updateSensorName (value,device)
+{
+    let regEx = /^[a-zA-Z][a-zA-Z_.]{0,1}[ a-z|A-Z|0-9|_.]*$/;
+
+     if (!value || value.trim() === '' || value.length > 15 || !regEx.test(value.trim()))
+    {
+        Alert.alert("Please enter valid Sensor name.", 'Invalid Sensor name! Maximum length is 15. Name should start with alphabet and may contain dot, underscore, space and numeric value.Please try again');
+        return null;
+    }
+     this.props.uiStartLoading("Updating Sensor Name....");
+
+     let url = Urls.RENAME_GATEWAY_SENSOR;
+     let payload = [{"sensorId":device.sensorId,"sensorName":value,"deviceType":Constant.SENSOR_TYPE, "gatewayId":device.gatewayId}]
+     console.log("payload for Sensor delete ---:"+JSON.stringify(payload));
+     try{
+            const response = await fetch(url,{ method: "PUT",headers: {'Accept': 'application/json','Content-Type' : 'application/json' },
+                       body: JSON.stringify(payload)})
+            console.log("res---"+JSON.stringify(response));
+           if(response.ok)
+           {
+               const msg = await response.json();
+               console.log("response in json---"+msg);
+               this.props.uiStopLoading();
+               console.log("Received success response for AWS");
+
+           }
+           else
+           {
+               this.props.uiStopLoading();
+               alert("Error received from AWS API. Please try again");
+               return null;
+           }
+        }catch(err)
+        {
+           this.props.uiStopLoading();
+           alert(err.message);
+           return null;
+        }
+    this.props.uiStartLoading("Updating Sensor Name....");
+    let sensors = this.state.sensors;
+    console.log('Sensor List....',sensors);
+    sensors.map((item) => {
+            if(item.eui64 === device.eui64)
+                item.device_name = value;
+    })
+     AsyncStorage.setItem('sensorList',JSON.stringify(sensors)).then(() => {
+              this.setState({sensors});
+     }).catch((error) => {
+                      console.log('error in saving list of sensors to  local storage', error);
+
+     })
+    this.props.uiStopLoading();
+    this.setState({editedSensor:''});
+    alert("Sensor Name Updated Successfully")
+    this._onRefresh();
+}
 
   onClearSearch = () => {
     this.setState({
@@ -1447,7 +1515,6 @@ gatewayDetailsContainer =()=>{
           let timeStamp = [];
           let timeStampToDisplay;
 
-
           return (
             <View style={styles.listItem}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', }}>
@@ -1457,14 +1524,18 @@ gatewayDetailsContainer =()=>{
                         <Text style={{ color: '#fff', fontSize: 17  }}>{debug ? info.item.id + '-' : ''}{info.item.eui64}</Text>
                     </View>
                </View>
-
+               <View style={{ height: 1, width: '100%', marginTop: 10, backgroundColor: '#000' }}></View>
                 <View style={{ justifyContent: 'space-evenly', flexDirection: 'row', marginTop: 10, alignItems: 'center', width: '100%' }}>
-                      <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, backgroundColor: '#737373' }}>
-                             <Icon name="history" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff' }} onPress={() => {
-                                   this.openHistoricalChart(info.item);
-                             }} />
-                             <Text style={{ color: '#fff', fontWeight: 'bold', paddingHorizontal: 25, paddingBottom: 5 }}>Chart</Text>
-                      </View>
+                  <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, backgroundColor: '#737373', justifyContent: 'center' }}>
+
+                  <MaterialIcon name="edit" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff' }} onPress={() =>
+                  {
+                    this.setState({editedSensor:info.item});
+                    this.showRenameModal();
+                  }} />
+                        <Text style={{ color: '#fff', fontWeight: 'bold', paddingHorizontal: 25, paddingBottom: 5 }}>Edit</Text>
+                  </View>
+
                  <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, backgroundColor: '#737373', justifyContent: 'center' }}>
 
                  <MaterialIcon name="delete" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff' }} onPress={() =>
@@ -1486,8 +1557,36 @@ gatewayDetailsContainer =()=>{
                 )} />
                   <Text style={{ color: '#fff', fontWeight: 'bold', paddingHorizontal: 25, paddingBottom: 5 }}>Delete</Text>
                   </View>
+                   <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, backgroundColor: '#737373' }}>
+                          <Icon name="history" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff' }} onPress={() => {
+                              this.openHistoricalChart(info.item);
+                          }} />
+                    <Text style={{ color: '#fff', fontWeight: 'bold', paddingHorizontal: 25, paddingBottom: 5 }}>Chart</Text>
+                   </View>
                  </View>
+
+               <DialogInput
+                         dialogIsVisible={this.isVisible}
+                         closeDialogInput={() => {this.showRenameModal()}}
+                         submitInput={(textValue) => this.updateSensorName(textValue,this.state.editedSensor)}
+                         outerContainerStyle={{ backgroundColor: '#fff',opacity : 0.45 }}
+                        containerStyle={{ backgroundColor: '#fff', borderColor: 'black', borderWidth: 2}}
+                        titleStyle={{ color: 'black',fontSize : RFPercentage(4) }}
+                        title="Rename Sensor"
+                        subTitleStyle={{ color: 'black' }}
+                        subtitle="Update Name of Sensor"
+                        placeholderInput= ""
+                        placeholderTextColor="white"
+                        textInputStyle={{ borderColor: 'black',color: 'black', borderWidth: 2,fontStyle: 'bold',fontSize : RFPercentage(3)  }}
+                        secureTextEntry={false}
+                        buttonsStyle={{ borderColor: 'white' }}
+                        textCancelStyle={{ color: 'black',fontSize: RFPercentage(2.5) }}
+                       submitTextStyle={{ color: 'black', fontStyle: 'bold' ,fontSize: RFPercentage(2.5)}}
+                       cancelButtonText="CANCEL"
+                       submitButtonText="RENAME"
+               />
               </View>
+
           );
         }
         else {
@@ -1627,7 +1726,7 @@ gatewayDetailsContainer =()=>{
                         style={styles.deviceIcon}
                       />
                       <View style={{ width: '40%', paddingRight: 10, flexDirection: 'column' }}>
-                        <Text style={{ fontSize: 10 }}>Device Name</Text>
+                        <Text style={{ fontSize: 10 }}>Sensor Name</Text>
                         <TextInput
                           placeholder='Sensor Name'
                           editable={!this.state.discoveredDevices[info.item.eui64].decision}
@@ -1657,9 +1756,9 @@ gatewayDetailsContainer =()=>{
 
                           if (!this.state.discoveredDevices[info.item.eui64].deviceName ||
                             this.state.discoveredDevices[info.item.eui64].deviceName.trim() === '' ||
-                            this.state.discoveredDevices[info.item.eui64].deviceName.length > 25 ||
+                            this.state.discoveredDevices[info.item.eui64].deviceName.length > 15 ||
                             !regEx.test(this.state.discoveredDevices[info.item.eui64].deviceName.trim())) {
-                            Alert.alert("Please enter valid Device name.", 'Invalid Device name! Maximum length is 25. Name should start with alphabet and may contain dot, underscore, space and numeric value.');
+                            Alert.alert("Please enter valid Sensor name.", 'Invalid Sensor name! Maximum length is 15. Name should start with alphabet and may contain dot, underscore, space and numeric value.');
                           }
                           else {
                             console.log("DeviceName:" + this.state.discoveredDevices[info.item.eui64].deviceName);

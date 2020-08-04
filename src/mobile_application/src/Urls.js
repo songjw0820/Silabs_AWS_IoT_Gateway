@@ -17,8 +17,11 @@ export const WEB_SOCKET_URL = production ? PRODUCTION_WEBSOCKET_URL : LOCAL_WEBS
 
 export const BASE_URL = production ? VM_URL : LOCAL_WEB_APP_URL;
 
-export const DELETE_GROWAREA = 'https://bym6ctlh6e.execute-api.us-east-2.amazonaws.com/dev/deletething';
-export const GET_USER='https://bym6ctlh6e.execute-api.us-east-2.amazonaws.com/dev/getuser/';
+export const AWS_BASE_URL = 'https://bym6ctlh6e.execute-api.us-east-2.amazonaws.com/dev';
+
+export const DELETE_GROWAREA = AWS_BASE_URL + '/deletething';
+export const GET_USER= AWS_BASE_URL + '/getuser/';
+export const RENAME_GATEWAY_SENSOR=AWS_BASE_URL + '/renamedevice';
 
 export const GET_SERVER_VERSION = BASE_URL + '/release/version';
 export const GET_ALL_FACILITIES = BASE_URL + '/facilities';

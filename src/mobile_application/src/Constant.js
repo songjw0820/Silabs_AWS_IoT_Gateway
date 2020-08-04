@@ -25,6 +25,9 @@ export const TABBAR_BUTTON_SELECTED_COLOR = PRIMARY_COLOR
 export const BLE_PAYLOAD_PREFIX = '---BEGIN BLE DATA---'
 export const BLE_PAYLOAD_SUFFIX = '----END BLE DATA----'
 export const BLE_RESPONSE_STATUS = 'success'
+export const SENSOR_TYPE = 'sentimate'
+export const GATEWAY_TYPE = 'gateway'
+
 
 
 export const DEVICES_COUNT = 'devices_count';

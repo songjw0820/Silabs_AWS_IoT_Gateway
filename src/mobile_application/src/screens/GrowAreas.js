@@ -3,6 +3,7 @@ import {
   RefreshControl, StyleSheet, Text, View, FlatList, ActivityIndicator, ScrollView,
   TouchableOpacity, Modal, Image, PermissionsAndroid, Alert, Platform, Button, Picker, AsyncStorage
 } from 'react-native';
+import  DialogInput  from 'react-native-dialog-input-custom';
 import * as Constant from '../Constant';
 import * as Urls from '../Urls';
 import * as RegistrationStates from '../RegistrationStates';
@@ -21,6 +22,9 @@ import { SearchBar } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import MultiSelect from 'react-native-multiple-select';
 import { Navigation } from 'react-native-navigation';
+import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
+import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+
 
 
 
@@ -41,6 +45,7 @@ class GrowAreas extends Component {
   provisionCallbackCharSubscription = null;
   timeoutValue=null;
   loading=false;
+  isVisible=false;
   
   constructor(props) {
     super(props);
@@ -65,6 +70,7 @@ class GrowAreas extends Component {
       curerentUser: '',
       seleneVersion: '',
       selectedGateway:'',
+      editedItem : '',
       isGotAlreadyRegistredGateway: false
 
     };
@@ -264,7 +270,7 @@ class GrowAreas extends Component {
     this.errorCode = 0;
     let payload = {}
     let regEx = /^[a-zA-Z][a-zA-Z_.-]{0,1}[ a-z|A-Z|0-9|_.:-]*$/;
-    if (this.state.gatewayName.trim() !== '' && this.state.gatewayName.length <= 30 && regEx.test(this.state.gatewayName.trim())) payload.name = this.state.gatewayName.trim();
+    if (this.state.gatewayName.trim() !== '' && this.state.gatewayName.length <= 25 && regEx.test(this.state.gatewayName.trim())) payload.name = this.state.gatewayName.trim();
     else { Alert.alert("Invalid Gateway name.", "Invalid Gateway name! Maximum length is 25. Name should start with alphabet and may contain dot, underscore, space and numeric value."); return; }
     if (this.state.gatewayUId.trim()) payload.uid = this.state.gatewayUId;
     else { alert("GatewayUId not found."); return; }
@@ -1242,6 +1248,71 @@ async deleteGatewayAPI(payload,device)
     console.log(selectedUsers);
   };
 
+  setVisibilityOfModal = () => {
+
+      this.isVisible = !this.isVisible;
+
+  }
+
+  async updateGatewayName (value,device)
+  {
+      let regEx = /^[a-zA-Z][a-zA-Z_.-]{0,1}[ a-z|A-Z|0-9|_.:-]*$/;
+
+      if (!value || value.trim() === '' || value.length >= 25 || !regEx.test(value.trim()))
+      {
+        Alert.alert("Invalid Gateway name.", "Invalid Gateway name! Maximum length is 25. Name should start with alphabet and may contain dot, underscore, space and numeric value.");
+        return null;
+      }
+
+
+       this.props.uiStartLoading("Updating Gateway Name....");
+       let url = Urls.RENAME_GATEWAY_SENSOR;
+       let payload = [{"gatewayName":value,"deviceType":Constant.GATEWAY_TYPE, "gatewayId":device.gatewayId}]
+
+       console.log("payload for Sensor delete ---:"+JSON.stringify(payload));
+       try{
+              const response = await fetch(url,{ method: "PUT",headers: {'Accept': 'application/json','Content-Type' : 'application/json' },
+                         body: JSON.stringify(payload)})
+              console.log("res---"+JSON.stringify(response));
+             if(response.ok)
+             {
+                 const msg = await response.json();
+                 console.log("response in json---"+msg);
+                 this.props.uiStopLoading();
+                 console.log("Received success response for AWS");
+
+             }
+             else
+             {
+                 this.props.uiStopLoading();
+                 alert("Error received from AWS API. Please try again");
+                 return null;
+             }
+          }catch(err)
+          {
+             this.props.uiStopLoading();
+             alert(err.message);
+             return null;
+          }
+      this.props.uiStartLoading("Updating Sensor Name....");
+      let sensors = this.state.gateways;
+      console.log('Gateway List....',gateways);
+      gateways.map((item) => {
+              if(item.gatewayId === device.gatewayId)
+                  item.gatewayName = value;
+      })
+       AsyncStorage.setItem('listGateway',JSON.stringify(gateways)).then(() => {
+                this.setState({gateways});
+       }).catch((error) => {
+                        console.log('error in saving list of gateways to  local storage', error);
+
+       })
+      this.props.uiStopLoading();
+      this.setState({editedItem: ''});
+      alert("Gateway Name Updated Successfully")
+      this._onRefresh();
+  }
+
   render() {
 
     if (this.props.retry401Count === 20 && !this.state.enabled401) {
@@ -1280,6 +1351,10 @@ async deleteGatewayAPI(payload,device)
             <TouchableOpacity style={{ flex: 1, height: 35 }} onPress={() => { }} />
             <View style={{ flexDirection: 'row' }}>
               {/* <Icon name="wifi" size={24} style={item.latest_heartbeat_timestamp === 'true' ? { paddingRight: 10, color: Constant.PRIMARY_COLOR } : { paddingRight: 10, color: 'red' }} /> */}
+              <MaterialIcon name="edit" size={24} style={{ paddingRight: 12, color: 'grey' }} onPress={() => {
+              this.setState({editedItem:item});
+              this.setVisibilityOfModal();
+              }} />
               <Icon name="delete" size={24} style={{ paddingRight: 10, color: 'grey' }} onPress={() => {
                   Alert.alert('Delete gateway', 'Are you sure you want to delete ' + item.gatewayName + '?'+' All the sensor provision with this gateway will also get deleted',
                     [
@@ -1306,6 +1381,26 @@ async deleteGatewayAPI(payload,device)
                  
               }} />
             </View>
+               <DialogInput
+                         dialogIsVisible={this.isVisible}
+                         closeDialogInput={() => {this.setVisibilityOfModal()}}
+                         submitInput={(textValue) => this.updateGatewayName(textValue,this.state.editedItem)}
+                         outerContainerStyle={{ backgroundColor: '#fff',opacity : 0.45 }}
+                        containerStyle={{ backgroundColor: '#fff', borderColor: 'black', borderWidth: 2}}
+                        titleStyle={{ color: 'black',fontSize : RFPercentage(4) }}
+                        title="Rename Gateway"
+                        subTitleStyle={{ color: 'black' }}
+                        subtitle="Update Name of Gateway"
+                        placeholderInput= ""
+                        placeholderTextColor="white"
+                        textInputStyle={{ borderColor: 'black',color: 'black', borderWidth: 2,fontStyle: 'bold',fontSize : RFPercentage(3)  }}
+                        secureTextEntry={false}
+                        buttonsStyle={{ borderColor: 'white' }}
+                        textCancelStyle={{ color: 'black',fontSize: RFPercentage(2.5) }}
+                       submitTextStyle={{ color: 'black', fontStyle: 'bold' ,fontSize: RFPercentage(2.5)}}
+                       cancelButtonText="CANCEL"
+                       submitButtonText="RENAME"
+               />
           </View>
         )}
        keyExtractor={(item) => item.gatewayId}
