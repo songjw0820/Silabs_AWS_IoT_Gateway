@@ -36,8 +36,6 @@ Navigation.registerComponentWithRedux('SideDrawer', () => SideDrawer, Provider, 
 
 Navigation.registerComponentWithRedux('DashboardScreen', () => Dashboard, Provider, store);
 
-Navigation.registerComponentWithRedux('PublishScreen', () => PublishScreen, Provider, store);
-
 Navigation.registerComponentWithRedux('Chart', () => HistoricalChart, Provider, store);
 
 
@@ -147,32 +145,13 @@ const startTABBasedNavigation = (pageIndex, iconSrc) => {
                       name: 'DashboardScreen',
                       options: {
                         bottomTab: {
-                          text: 'Dashboard',
-                          icon: require('./assets/images/dashboard_grey.png'),
+                          icon: require('./assets/images/home.png'),
                           iconColor:'#000000',
-                          selectedIconColor: Constant.TABBAR_BUTTON_SELECTED_COLOR,
-                          textColor:'#000000',
-                          selectedTextColor: Constant.TABBAR_BUTTON_SELECTED_COLOR,
                         },
                         popGesture: true,
-                        topBar: {
-                          title: {
-                            text: 'Dashboard',
-                            fontSize : RFPercentage(1.9),
-                          },
-                          leftButtons: [
-                            {
-                              id: "sideDrawer",
-                              icon: iconSrc,
-                              title: 'Menu',
-                              color: 'white'
-                            }
-                          ]
-                        },
                         sideMenu: {
                           left: {
                             visible: false,
-                            enabled: Platform.OS === 'android',
                           }
 
                         }
@@ -180,162 +159,23 @@ const startTABBasedNavigation = (pageIndex, iconSrc) => {
                     }
                   }]
                 }
-              },
-              {
-                stack: {
-                  id: 'GROWAREA',
-                  children: [{
-                    component: {
-                      name: 'GrowAreasScreen',
-                      options: {
-                        bottomTab: {
-                          text: 'Gateway',
-                          icon: require('./assets/images/growarea.png'),
-                          //iconColor: Constant.TABBAR_BUTTON_COLOR,
-                          iconColor:'#000000',
-                          selectedIconColor: Constant.TABBAR_BUTTON_SELECTED_COLOR,
-                         // textColor: Constant.TABBAR_BUTTON_COLOR,
-                          textColor:'#000000',
-                          selectedTextColor: Constant.TABBAR_BUTTON_SELECTED_COLOR,
-                        },
-                        popGesture: true,
-                        topBar: {
-                          title: {
-                            text: 'My Gateways',
-                            fontSize : RFPercentage(1.9),
-                          },
-                          leftButtons: [
-                            {
-                              id: "sideDrawer",
-                              icon: iconSrc,
-                              title: 'Menu',
-                              color: 'white'
-                            }
-                          ]
-                        },
-                        sideMenu: {
-                          left: {
-                            visible: false,
-                            enabled: Platform.OS === 'android',
-                          }
-
-                        }
-                      }
-                    }
-                  }]
-                }
-              },
-             
-              {
-                stack: {
-                  id: 'DEVICES',
-                  children: [{
-                    component: {
-                      name: 'DevicesScreen',
-                      options: {
-                        bottomTab: {
-                          text: 'Sensors',
-                          icon: require('./assets/images/device_72.png'),
-                          //iconColor: Constant.TABBAR_BUTTON_COLOR,
-                          iconColor:'#000000',
-                          selectedIconColor: Constant.TABBAR_BUTTON_SELECTED_COLOR,
-                          //textColor: Constant.TABBAR_BUTTON_COLOR,
-                          textColor:'#000000',
-                          selectedTextColor: Constant.TABBAR_BUTTON_SELECTED_COLOR,
-                        },
-                        popGesture: true,
-                        topBar: {
-                          title: {
-                            text: 'My Sensors',
-                            fontSize : RFPercentage(1.9),
-                          },
-                          leftButtons: [
-                            {
-                              id: "sideDrawer",
-                              icon: iconSrc,
-                              title: 'Menu',
-                              color: 'white'
-                            }
-                          ]
-                        },
-                        sideMenu: {
-                          left: {
-                            visible: false,
-                            enabled: Platform.OS === 'android',
-                          }
-
-                        }
-                      },
-
-                    },
-
-                  }
-                  ]
-                }
-              },
-              {
-                stack: {
-                  id: 'PUBLISH',
-                  children: [{
-                    component: {
-                      name: 'PublishScreen',
-                      options: {
-                        bottomTab: {
-                          text: 'Publish Data',
-                          icon: require('./assets/images/growsection.png'),
-                          //iconColor: Constant.TABBAR_BUTTON_COLOR,
-                          iconColor:'#000000',
-                          selectedIconColor: Constant.TABBAR_BUTTON_SELECTED_COLOR,
-                          //textColor: Constant.TABBAR_BUTTON_COLOR,
-                          textColor:'#000000',
-                          selectedTextColor: Constant.TABBAR_BUTTON_SELECTED_COLOR,
-                        },
-                        popGesture: true,
-                        topBar: {
-                          title: {
-                            text: 'Publish data',
-                            fontSize : RFPercentage(1.9),
-                          },
-                          leftButtons: [
-                            {
-                              id: "sideDrawer",
-                              icon: iconSrc,
-                              title: 'Menu',
-                              color: 'white'
-                            }
-                          ]
-                        },
-                        sideMenu: {
-                          left: {
-                            visible: false,
-                            enabled: Platform.OS === 'android',
-                          }
-
-                        }
-                      },
-
-                    },
-
-                  }
-                  ]
-                }
-              },
+              }, 
             ],
             options: {
               bottomTabs: {
                 hideShadow: true,
+                visible:false,
                 currentTabIndex: index,
                 backgroundColor: 'white'
 
               },
               popGesture: true,
               topBar: {
-                visible: true,
-                hideOnScroll: true,
+                visible: false,
+               hideOnScroll: true,
                 drawBehind: true,
                 background: {
-                 // color: '#00ff00',
-                  color: '#ff9900',
+                  color: Constant.PRIMARY_COLOR,
                 },
               },
               layout: {
@@ -361,6 +201,7 @@ Navigation.events().registerBottomTabSelectedListener(async (res) => {
     setTimeout(() => {
       tabCount = 0;
     }, 1000)
+
     if (tabCount === 2) {
       tabCount = 0;
       if (res.selectedTabIndex === res.unselectedTabIndex) {

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {
-  RefreshControl, StyleSheet, Text, View, FlatList, ActivityIndicator, ScrollView,
+  RefreshControl, StyleSheet, Text, View, FlatList, ActivityIndicator, ScrollView,Dimensions,
   TouchableOpacity, Modal, Image, PermissionsAndroid, Alert, Platform, Button, Picker, AsyncStorage
 } from 'react-native';
 import  DialogInput  from 'react-native-dialog-input-custom';
@@ -1675,7 +1675,7 @@ const styles = StyleSheet.create({
     backgroundColor: Constant.LIGHT_GREY_COLOR
   },
   greenBackgroundContainer: {
-    backgroundColor: Constant.PRIMARY_COLOR,
+    backgroundColor: Constant.RED_COLOR,
     width: '100%',
     height: '25%',
     position: 'absolute'
@@ -1686,6 +1686,7 @@ const styles = StyleSheet.create({
     backgroundColor: Constant.WHITE_BACKGROUND_COLOR,
     marginLeft: '5%',
     marginRight: '5%',
+   // marginTop:'15%',
     borderRadius: 5
   },
   titleContainer: {

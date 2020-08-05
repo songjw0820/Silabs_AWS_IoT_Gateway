@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import {
-  StyleSheet, Text, View, ActivityIndicator,
-  Platform, AsyncStorage
+  StyleSheet, Text, View, ActivityIndicator,Dimensions,ImageBackground,
+  Platform, AsyncStorage,Image,TouchableOpacity
 } from 'react-native';
 import * as Constant from '../Constant';
 import { connect } from 'react-redux';
@@ -12,17 +12,14 @@ import {
 import Swiper from 'react-native-swiper';
 import { Navigation } from 'react-native-navigation';
 import Icon from 'react-native-vector-icons/Ionicons';
-
-
-
-
+import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+const {width,height} = Dimensions.get('window');
 class Dashboard extends Component {
 
   static get options() {
     return Constant.DEFAULT_NAVIGATOR_STYLE
   }
 
-  
   constructor(props) {
     super(props);
     Navigation.events().bindComponent(this);
@@ -68,11 +65,66 @@ class Dashboard extends Component {
         </View>)
   }
 
+  openGatewayPage = () => {
+    let screenName = 'GrowAreasScreen';
+    Navigation.push(this.props.componentId, {
+      component: {
+        name: screenName,
+        passProps: {
+         
+        },
+        options: {
+          topBar: {
+            visible: true,
+            animate: true,
+            elevation: 0,
+            shadowOpacity: 0,
+            drawBehind: false,
+            hideOnScroll: false,
+            background: {
+              color: Constant.RED_COLOR,
+            },
+            backButton: {
+              color: '#fff',
+             // icon:require('../../assets/images/back.png')
+            },
+            title: {
+              text: "Previous",
+              color: '#fff',
+            }
+          },
+          layout: {
+            orientation: ['portrait'] // An array of supported orientations
+          },
+          sideMenu: {
+            left: {
+              visible: false,
+              enabled: Platform.OS === 'android',
+            }
+          }
+        }
+      }
+    });
+  }
+
   render() {
     return (
       <View style={[styles.container, { flex: 2 }]}>
-        <View style={styles.greenBackgroundContainer} />
-        {/* {this.renderPage()} */}
+         <Image source={ require('../../assets/images/setting.png')} 
+         style={[styles.drawerItemIcon]}
+         />
+             <ImageBackground
+                source={require('../../assets/images/title_logo.png')} style={{ width: width * 0.9, marginTop: '2%', marginBottom: '5%',marginLeft:(width * 0.1),padding : '1%',height : (width * 0.7) * 0.45}}>
+               </ImageBackground>
+             <Text style={[styles.dashboardTitleText, { marginLeft: 0 }]}> EFR32 {"\n"}IoT {"\n"}Gateway</Text>
+             <View style={{ flexDirection: 'column',marginLeft:(width*0.15),marginTop:(width*0.2)}}>
+              <TouchableOpacity style={[styles.DashboardroundButton]} onPress={() => {}}>
+                <Text style={[styles.dashboardButtonText, { marginLeft: 0 }]}>SENSOR VIEW</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.DashboardroundButton]} onPress={() => {this.openGatewayPage()}}>
+                <Text style={[styles.dashboardButtonText, { marginLeft: 0 }]}>GATEWAY VIEW</Text>
+              </TouchableOpacity>
+            </View>
       </View>
     );
   }
@@ -83,14 +135,47 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
-    backgroundColor: Constant.LIGHT_GREY_COLOR
+    backgroundColor: Constant.PRIMARY_COLOR
   },
   greenBackgroundContainer: {
-    backgroundColor: Constant.PRIMARY_COLOR,
-    //backgroundColor: '#ff9900',
+   // backgroundColor: Constant.PRIMARY_COLOR,
+    backgroundColor: Constant.LIGHT_GREY_COLOR,
     width: '100%',
     height: '25%',
     position: 'absolute',
+  },
+  drawerItemIcon: {
+   // marginRight: '5%',
+    marginLeft:(width * 0.9),
+    height:  (width * 0.7) * 0.09,
+    width : (width * 0.7) * 0.09
+},
+  DashboardroundButton: {
+    flexDirection: 'column',
+    justifyContent: "center",
+    alignItems: 'center',
+    padding: 5,
+    borderRadius: 16,
+    marginRight: 12,
+    marginTop:10,
+    width: width * 0.7,
+    height:width * 0.15,
+    borderRadius: 12,
+    backgroundColor: Constant.RED_COLOR,
+  },
+  dashboardButtonText: {
+    fontSize: 19,
+    marginLeft: 7,
+    color: Constant.WHITE_COLOR,
+    fontWeight: "bold",
+    textAlign: 'center'
+  },
+  dashboardTitleText: {
+    fontSize: RFPercentage(5.5),
+    marginLeft: 7,
+    color: Constant.BLACK_COLOR,
+    fontWeight: "bold",
+    textAlign: 'center'
   },
   listContainer: {
     flex: 1,
