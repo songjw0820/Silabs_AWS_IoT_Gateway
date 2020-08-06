@@ -81,12 +81,12 @@ class Dashboard extends Component {
             shadowOpacity: 0,
             drawBehind: false,
             hideOnScroll: false,
+            height:44,
             background: {
               color: Constant.RED_COLOR,
             },
             backButton: {
               color: '#fff',
-             // icon:require('../../assets/images/back.png')
             },
             title: {
               text: "Previous",
@@ -110,9 +110,11 @@ class Dashboard extends Component {
   render() {
     return (
       <View style={[styles.container, { flex: 2 }]}>
+        <View style={{width:'40%' ,flexDirection:'row',alignItems:'flex-end',alignContent:'flex-end',alignSelf:'flex-end',justifyContent:'flex-end'}}>
          <Image source={ require('../../assets/images/setting.png')} 
-         style={[styles.drawerItemIcon]}
+         style={styles.settingIcon}
          />
+         </View>
              <ImageBackground
                 source={require('../../assets/images/title_logo.png')} style={{ width: width * 0.9, marginTop: '2%', marginBottom: '5%',marginLeft:(width * 0.1),padding : '1%',height : (width * 0.7) * 0.45}}>
                </ImageBackground>
@@ -150,6 +152,11 @@ const styles = StyleSheet.create({
     height:  (width * 0.7) * 0.09,
     width : (width * 0.7) * 0.09
 },
+settingIcon: {
+  height: height * 0.05,
+  width: width * 0.07,
+  marginHorizontal:width * 0.03
+},
   DashboardroundButton: {
     flexDirection: 'column',
     justifyContent: "center",
@@ -164,7 +171,7 @@ const styles = StyleSheet.create({
     backgroundColor: Constant.RED_COLOR,
   },
   dashboardButtonText: {
-    fontSize: 19,
+    fontSize: RFPercentage(3.0),
     marginLeft: 7,
     color: Constant.WHITE_COLOR,
     fontWeight: "bold",

@@ -159,7 +159,7 @@ const startTABBasedNavigation = (pageIndex, iconSrc) => {
                     }
                   }]
                 }
-              }, 
+              },
             ],
             options: {
               bottomTabs: {
@@ -201,7 +201,6 @@ Navigation.events().registerBottomTabSelectedListener(async (res) => {
     setTimeout(() => {
       tabCount = 0;
     }, 1000)
-
     if (tabCount === 2) {
       tabCount = 0;
       if (res.selectedTabIndex === res.unselectedTabIndex) {
