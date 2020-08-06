@@ -112,7 +112,7 @@ int telemetry(struct mosquitto *mosq, const struct mosquitto_message *message)
                         LOG_INFO("Clearing device object...");
                         delete device;
 			device = NULL;
-			return;
+			return -1;
                 }
         }
 	auto topicName = std::string("gateway/") + std::string(gatewayId.c_str()) + "/telemetry"; 
