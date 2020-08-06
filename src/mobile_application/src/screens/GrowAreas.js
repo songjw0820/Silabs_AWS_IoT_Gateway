@@ -24,9 +24,7 @@ import MultiSelect from 'react-native-multiple-select';
 import { Navigation } from 'react-native-navigation';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
-
-
-
+const {width,height} = Dimensions.get('window');
 
 class GrowAreas extends Component {
 
@@ -270,8 +268,8 @@ class GrowAreas extends Component {
     this.errorCode = 0;
     let payload = {}
     let regEx = /^[a-zA-Z][a-zA-Z_.-]{0,1}[ a-z|A-Z|0-9|_.:-]*$/;
-    if (this.state.gatewayName.trim() !== '' && this.state.gatewayName.length <= 25 && regEx.test(this.state.gatewayName.trim())) payload.name = this.state.gatewayName.trim();
-    else { Alert.alert("Invalid Gateway name.", "Invalid Gateway name! Maximum length is 25. Name should start with alphabet and may contain dot, underscore, space and numeric value."); return; }
+    if (this.state.gatewayName.trim() !== '' && this.state.gatewayName.length <= 30 && regEx.test(this.state.gatewayName.trim())) payload.name = this.state.gatewayName.trim();
+    else { Alert.alert("Invalid Gateway name.", "Invalid Gateway name! Maximum length is 30. Name should start with alphabet and may contain dot, underscore, space and numeric value."); return; }
     if (this.state.gatewayUId.trim()) payload.uid = this.state.gatewayUId;
     else { alert("GatewayUId not found."); return; }
     if (this.state.gatewayDescription.trim().length <= 200) payload.description = this.state.gatewayDescription;
@@ -1194,6 +1192,19 @@ async deleteGatewayAPI(payload,device)
 
   }
 
+  openDashboardPage = () => {
+    Navigation.push(this.props.componentId, {
+      component: {
+        name: 'DashboardScreen',
+        options: {
+          topBar: {
+            visible: false
+          }
+        }
+      }
+    });
+  }
+
   getGatewayList()
   {
     AsyncStorage.getItem('listGateway').then(response => {
@@ -1258,9 +1269,9 @@ async deleteGatewayAPI(payload,device)
   {
       let regEx = /^[a-zA-Z][a-zA-Z_.-]{0,1}[ a-z|A-Z|0-9|_.:-]*$/;
 
-      if (!value || value.trim() === '' || value.length >= 25 || !regEx.test(value.trim()))
+      if (!value || value.trim() === '' || value.length >= 30 || !regEx.test(value.trim()))
       {
-        Alert.alert("Invalid Gateway name.", "Invalid Gateway name! Maximum length is 25. Name should start with alphabet and may contain dot, underscore, space and numeric value.");
+        Alert.alert("Invalid Gateway name.", "Invalid Gateway name! Maximum length is 30. Name should start with alphabet and may contain dot, underscore, space and numeric value.");
         return null;
       }
 
@@ -1420,7 +1431,7 @@ async deleteGatewayAPI(payload,device)
     if (this.props.isLoading) {
       growAreasList=(
             <View style={styles.activityIndicator}>
-              <ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} /><Text style={{ margin: 4, fontWeight: "bold" }}>{this.props.isMessage}</Text>
+              <ActivityIndicator size="large" color={Constant.RED_COLOR} /><Text style={{ margin: 4, fontWeight: "bold" }}>{this.props.isMessage}</Text>
              </View>
            );
     } else if (listData.length === 0) {
@@ -1498,17 +1509,17 @@ async deleteGatewayAPI(payload,device)
           <TextField label='Gateway Name' onChangeText={(gatewayName) => this.setState({ gatewayName })} value={this.state.gatewayName} labelHeight={18} />
           <TextField label='Description' onChangeText={(gatewayDescription) => this.setState({ gatewayDescription })} value={this.state.gatewayDescription} labelHeight={18} />
         </ScrollView>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', marginTop: 10, marginBottom: 10 }}>
-          <Button title="Cancel" onPress={() => this.setRegistrationModalVisible(false, true)} />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', marginTop: 10, marginBottom: 10}}>
+          <Button title="Cancel" color={Constant.RED_COLOR} onPress={() => this.setRegistrationModalVisible(false, true)} />
           <Button onPress={
             this.gatewayRegisterSubmitClickHandler
-          } title="Submit" />
+          } title="Submit" color={Constant.RED_COLOR} />
         </View>
       </ScrollView>
     );
 
     if (this.props.registrationState && this.props.registrationState !== 0) {
-      stateIndicator = (<ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} />);
+      stateIndicator = (<ActivityIndicator size="large" color={Constant.RED_COLOR} />);
       if (this.props.registrationState === RegistrationStates.REGISTRATION_FAILED_TO_ARROW ||
         this.props.registrationState === RegistrationStates.FETCHING_CONFIG_FROM_ARROW_FAILED ||
         this.props.registrationState === RegistrationStates.REGISTRATION_FAILED_TO_INTERNAL_CLOUD ||
@@ -1558,7 +1569,7 @@ async deleteGatewayAPI(payload,device)
     }
 
     if (this.state.bleMessage || this.state.bleError) {
-      stateIndicator = (<ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} />);
+      stateIndicator = (<ActivityIndicator size="large" color={Constant.RED_COLOR} />);
       message = this.state.bleMessage;
       if (this.state.bleError) {
         stateIndicator = (<View />);
@@ -1575,22 +1586,21 @@ async deleteGatewayAPI(payload,device)
     return (
       <View style={styles.container}>
         <View style={styles.greenBackgroundContainer} />
+        <View style={styles.titleTextContainer}>
+          <View style={{width:'60%'}}><Text style={styles.titleText}> Gateway</Text></View>
+        
+          <View style={{width:'40%' ,flexDirection:'row',alignItems:'flex-end',alignContent:'flex-end',alignSelf:'flex-end',justifyContent:'flex-end'}}>
+          <TouchableOpacity>
+          <Image source={ require('../../assets/images/setting1.png')} style={styles.settingIcon} ></Image>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => {this.openDashboardPage() }}>
+          <Image source={ require('../../assets/images/home1.png')} style={styles.homeIcon} ></Image>
+          </TouchableOpacity>
+          </View>
+        </View>
         <View style={styles.listContainer}>
           <View style={styles.titleContainer}>
-            <Text style={styles.listTitle}> Gateway</Text>
-            {!this.state.searching && listData.length > 0 &&
-              <Icon name="search" size={24} style={{ padding: 10 }} onPress={() => {
-                this.setState({
-                  searching: true
-                });
-                var myInterval = setInterval(() => {
-                  if (this.search) {
-                    this.search.focus();
-                    clearInterval(myInterval);
-                  }
-                }, 100);
-              }} />
-            }
+            <View style={{width:'100%' ,flexDirection:'row',alignItems:'flex-end',alignContent:'flex-end',alignSelf:'flex-end',justifyContent:'flex-end'}}>
             <TouchableOpacity style={[styles.roundButton, styles.addNewButton]} onPress={async () => {
               this.props.bleManager.destroy()
               this.props.onSetBleManager(new BleManager());
@@ -1602,21 +1612,10 @@ async deleteGatewayAPI(payload,device)
               this.setState({ discoveredGateways: {}, waitingForGatewayLoader: true, bleMessage: '', bleError: '' })
             }
             }>
-              <Text style={styles.buttonText}>Add New</Text>
-            </TouchableOpacity>
+            <Text style={styles.buttonText}>Add New</Text>
+              
+            </TouchableOpacity></View>
           </View>
-          {this.state.searching && (listData.length > 0 || this.state.filterKey.length > 0) &&
-            <SearchBar
-              ref={search => this.search = search}
-              lightTheme
-              value={this.state.filterKey}
-              onChangeText={(filterKey) => this.setState({ filterKey })}
-              onClear={() => this.onClearSearch()}
-              placeholder='Search gateway...'
-              containerStyle={{ backgroundColor: Constant.LIGHT_GREY_COLOR, padding: 2, maxHeight: 34 }}
-              inputContainerStyle={{ backgroundColor: Constant.WHITE_BACKGROUND_COLOR, maxHeight: 34 }}
-              inputStyle={{ fontSize: 16 }} />
-          }
           {growAreasList}
         </View>
         <Modal
@@ -1636,7 +1635,7 @@ async deleteGatewayAPI(payload,device)
                 />
 
                 <Text> Discover New Gateways </Text>
-                {this.state.waitingForGatewayLoader ? <ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} style={{
+                {this.state.waitingForGatewayLoader ? <ActivityIndicator size="large" color={Constant.RED_COLOR} style={{
                   alignSelf: 'flex-end',
                   justifyContent: 'center',
                   height: 30,
@@ -1674,10 +1673,30 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: Constant.LIGHT_GREY_COLOR
   },
+  titleText: {
+    fontSize: RFPercentage(4.5),
+    color: Constant.WHITE_TEXT_COLOR,
+    fontWeight: "bold",
+    marginLeft: width * 0.03,
+  },
+  settingIcon: {
+    height: height * 0.05,
+    width: width * 0.07,
+    marginHorizontal:width * 0.03
+  },
+  homeIcon: {
+    height: height * 0.055,
+    width: width * 0.07,
+    marginHorizontal:width * 0.03
+  },
+  titleTextContainer: {
+    flexDirection: 'row',
+    alignItems: "center",
+  },
   greenBackgroundContainer: {
     backgroundColor: Constant.RED_COLOR,
     width: '100%',
-    height: '25%',
+    height: height * 0.095,
     position: 'absolute'
   },
   listContainer: {
@@ -1686,8 +1705,8 @@ const styles = StyleSheet.create({
     backgroundColor: Constant.WHITE_BACKGROUND_COLOR,
     marginLeft: '5%',
     marginRight: '5%',
-   // marginTop:'15%',
-    borderRadius: 5
+    marginTop:height * 0.065,
+    borderRadius: 5,
   },
   titleContainer: {
     flexDirection: 'row',
@@ -1697,22 +1716,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 6,
     borderRadius: 12,
-    marginRight: 12
+    marginRight: 12,
+    height:width * 0.09,
+    width:width * 0.2
   },
   addNewButton: {
     backgroundColor: Constant.ADD_NEW_GATEWAY_BUTTON_COLOR,
   },
   registerButton: {
-    backgroundColor: Constant.PRIMARY_COLOR,
+    backgroundColor: Constant.RED_COLOR,
   },
   cancelButton: {
-    width: 60,
+   // width: 60,
     margin: 10,
     marginLeft: 15,
-    backgroundColor: Constant.DARK_GREY_COLOR
+    backgroundColor: Constant.RED_COLOR
   },
   buttonText: {
-    fontSize: 12,
+    fontSize: RFPercentage(2.2),
     color: Constant.WHITE_TEXT_COLOR,
     fontWeight: "bold",
     textAlign: 'center'
