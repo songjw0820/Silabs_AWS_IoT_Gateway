@@ -1383,6 +1383,44 @@ scanAndConnectForDeleteSensor = (inBackground,payload,sensorId,eui64) => {
     }
   }
 
+  openSettingsPage = () => {
+          Navigation.push(this.props.componentId, {
+            component: {
+              name: 'SettingsScreen',
+              options: {
+                topBar: {
+                  visible: true,
+
+                  background: {
+                     color: Constant.RED_COLOR,
+                  },
+                  backButton: {
+                    color: '#fff',
+                   // icon:require('../../assets/images/back.png')
+                  },
+                  title: {
+                    text: "Previous",
+                    color: '#fff',
+                  }
+                }
+              }
+            }
+          });
+  }
+
+  openDashboardPage = () => {
+    Navigation.push(this.props.componentId, {
+      component: {
+        name: 'DashboardScreen',
+        options: {
+          topBar: {
+            visible: true
+          }
+        }
+      }
+    });
+  }
+
 onDashboardLoad(payload) {
     console.log("Do something when the dashboard is fully loaded.");
 }
@@ -1517,30 +1555,22 @@ async updateSensorName (value,device)
 
           return (
             <View style={styles.listItem}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', }}>
-                    <View style={{ flexDirection: 'column', color: '#fff', width: '60%', marginLeft: 0.5}}>
+                 <View style = {{flexDirection: 'row'}}>
+                    <View style={{ flexDirection: 'column', color: '#fff', width: '60%'}}>
                         <Text style={{ alignSelf: 'flex-start', color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{debug ? info.item.eui64 + '-' : ''}{info.item.device_name}</Text>
                         <Text style={{ alignSelf: 'flex-start', color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{debug ? info.item.eui64 + '-' : ''}{info.item.device_type}</Text>
                         <Text style={{ color: '#fff', fontSize: 17  }}>{debug ? info.item.id + '-' : ''}{info.item.eui64}</Text>
                     </View>
-               </View>
-               <View style={{ height: 1, width: '100%', marginTop: 10, backgroundColor: '#000' }}></View>
-                <View style={{ justifyContent: 'space-evenly', flexDirection: 'row', marginTop: 10, alignItems: 'center', width: '100%' }}>
-                  <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, backgroundColor: '#737373', justifyContent: 'center' }}>
+                    <View style={{flexDirection: 'row', alignItems: "center",marginLeft: '15%',height: '70%',marginTop: '2.5%'}}>
+                    <MaterialIcon name="edit" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff',backgroundColor: Constant.BLUE_COLOR }} onPress={() =>
+                    {
+                        this.setState({editedSensor:info.item});
+                        this.showRenameModal();
+                    }} />
 
-                  <MaterialIcon name="edit" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff' }} onPress={() =>
-                  {
-                    this.setState({editedSensor:info.item});
-                    this.showRenameModal();
-                  }} />
-                        <Text style={{ color: '#fff', fontWeight: 'bold', paddingHorizontal: 25, paddingBottom: 5 }}>Edit</Text>
-                  </View>
-
-                 <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, backgroundColor: '#737373', justifyContent: 'center' }}>
-
-                 <MaterialIcon name="delete" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff' }} onPress={() =>
-                 Alert.alert('Delete Sensor', 'Are you sure you want to delete ' + info.item.device_name + '?',
-                  [
+                   <MaterialIcon name="delete" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff',marginLeft: '10%',backgroundColor: Constant.BLUE_COLOR }} onPress={() =>
+                   Alert.alert('Delete Sensor', 'Are you sure you want to delete ' + info.item.device_name + '?',
+                    [
                     {
                        text: 'Cancel', onPress: () => {
                            console.log('delete operation was canceled.');
@@ -1552,19 +1582,11 @@ async updateSensorName (value,device)
                         this.showDeviceDiscoveryModalForDeletionOfSensor(true,false,info.item.sensorId,info.item.eui64);
                        }
                      },
-                  ],
-                  { cancelable: true }
-                )} />
-                  <Text style={{ color: '#fff', fontWeight: 'bold', paddingHorizontal: 25, paddingBottom: 5 }}>Delete</Text>
-                  </View>
-                   <View style={{ flexDirection: 'column', alignItems: "center", marginLeft: 10, backgroundColor: '#737373' }}>
-                          <Icon name="history" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff' }} onPress={() => {
-                              this.openHistoricalChart(info.item);
-                          }} />
-                    <Text style={{ color: '#fff', fontWeight: 'bold', paddingHorizontal: 25, paddingBottom: 5 }}>Chart</Text>
-                   </View>
+                    ],
+                    { cancelable: true }
+                    )} />
+                    </View>
                  </View>
-
                <DialogInput
                          dialogIsVisible={this.isVisible}
                          closeDialogInput={() => {this.showRenameModal()}}
@@ -1585,7 +1607,7 @@ async updateSensorName (value,device)
                        cancelButtonText="CANCEL"
                        submitButtonText="RENAME"
                />
-              </View>
+            </View>
 
           );
         }
@@ -1636,7 +1658,7 @@ async updateSensorName (value,device)
                     <RefreshControl
                       refreshing={this.state.refreshing}
                       onRefresh={this._onRefresh}
-                      colors={['red', 'green', 'blue']}
+                      colors={['#d91f2b','#d91f2b','#d91f2b']}
                     />
                   }
                 />
@@ -1650,7 +1672,7 @@ async updateSensorName (value,device)
                           <RefreshControl
                             refreshing={this.state.refreshing}
                             onRefresh={this._onRefresh}
-                            colors={['red', 'green', 'blue']}
+                            colors={['#d91f2b','#d91f2b','#d91f2b']}
                           />
                         }>
               <Text color="#00ff00">No Sensors found.</Text>
@@ -1666,7 +1688,7 @@ async updateSensorName (value,device)
                                    <RefreshControl
                                      refreshing={this.state.refreshing}
                                      onRefresh={this._onRefresh}
-                                     colors={['red', 'green', 'blue']}
+                                     colors={['#d91f2b','#d91f2b','#d91f2b']}
                                    />
                                  }>
                        <Text color="#00ff00">No Sensors found.</Text>
@@ -1676,7 +1698,7 @@ async updateSensorName (value,device)
                  }
 
         if (this.props.isLoading) {
-              devicesList = <View style={styles.activityIndicator}><ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} />
+              devicesList = <View style={styles.activityIndicator}><ActivityIndicator size="large" color={Constant.RED_COLOR} />
               <Text style={{ margin: 4, fontWeight: "bold" }}>{this.props.isMessage}</Text>
               </View>;
            } else if (displayList.length === 0) {
@@ -1687,7 +1709,7 @@ async updateSensorName (value,device)
                         <RefreshControl
                         refreshing={this.state.refreshing}
                         onRefresh={this._onRefresh}
-                        colors={['red', 'green', 'blue']}
+                        colors={['#d91f2b','#d91f2b','#d91f2b']}
                         />
                    }>
                    <Text color="#00ff00">No Sensors found.</Text>
@@ -1702,7 +1724,7 @@ async updateSensorName (value,device)
             source={require('../../assets/images/scan.png')}
             style={styles.scanImage}
           />
-          {this.state.waitingDeviceLoader ? <ActivityIndicator size='large' color='green' style={{ marginTop: 20 }} /> : <View></View>}
+          {this.state.waitingDeviceLoader ? <ActivityIndicator size='large' color={Constant.RED_COLOR} style={{ marginTop: 20 }} /> : <View></View>}
           {this.state.bleMessage && <Text style={styles.scanText}>{this.state.bleMessage}</Text>}
         </View>
       );
@@ -1815,40 +1837,7 @@ async updateSensorName (value,device)
           }
         }
 
-        detailBlock = (
-          <View style={styles.detailBlock}>
-            <Text style={styles.detailBlockTitleInfo}>Gateway Name</Text>
-            <Text numberOfLines={1} style={getDetailBlockTitleStyle(this.growAreaName)}>{this.growAreaName}</Text>
 
-            <View style={{ flexDirection: 'row', alignItems: "center", justifyContent: 'space-evenly' }}>
-
-              <View style={{ width: 1, height: '100%', backgroundColor: Constant.GREY_TEXT_COLOR }} />
-
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: "center", justifyContent: 'space-evenly', marginTop: 10, marginBottom: 10, marginLeft: 10 }}>
-              <TouchableOpacity style={[styles.roundButton, { backgroundColor: Constant.PRIMARY_COLOR, width: 90, height: 35 }]} onPress={() => {
-                this.showDeviceDiscoveryModal(true, false, true, false)
-                if (this.provisionCallbackCharSubscription) {
-                  console.log('keepprovision callback');
-
-                  this.provisionCallbackCharSubscription.remove();
-                }
-
-                if (this.discoverCharSubscription) {
-                  this.discoverCharSubscription.remove();
-                }
-                this.setState({
-                  callbackRegistredDevices: 0
-                  , showCancelButton: true, errorCode: 0
-                })
-              }}>
-                <Text style={styles.buttonText}>Sensors</Text>
-                <Image source={require('../../assets/images/add_24.png')} style={styles.detailIcon} />
-              </TouchableOpacity>
-
-            </View>
-          </View>
-        );
       }
 
     return (
@@ -1861,7 +1850,7 @@ async updateSensorName (value,device)
               >
                 <View style={{ justifyContent: 'center', flex: 1, backgroundColor: '#rgba(0, 0, 0, 0.5)' }}>
                   <View style={{ alignItems: 'center', backgroundColor: '#fff' }}>
-                    <ActivityIndicator size='large' color='green' style={{ marginTop: 20 }} />
+                    <ActivityIndicator size='large' color={Constant.RED_COLOR}  style={{ marginTop: 20 }} />
                     <Text style={{ alignSelf: 'center', marginTop: 20 }}> Your {this.onTimeRegistredDevices === 1 ? 'Sensor is ' : 'Sensors are '}provisioning{debug ? this.onTimeRegistredDevices : ''}.</Text>
                     <Text style={{ alignSelf: 'center', marginTop: 0, marginBottom: 20 }}>This process may take time. </Text>
                     <Text style={{ alignSelf: 'center', marginTop: 20, marginBottom: 20 }}>Successfully registered Sensors: {this.state.callbackRegistredDevices}</Text>
@@ -1872,37 +1861,41 @@ async updateSensorName (value,device)
 
               </Modal>
         <View style={styles.greenBackgroundContainer} />
+        <View style={styles.titleTextContainer}>
+            <View style={{width:'60%'}}><Text style={styles.titleText}>Sensors</Text></View>
+            <View style={{width:'40%',flexDirection:'row',alignItems:'flex-end',alignContent:'flex-end',alignSelf:'flex-end',justifyContent:'flex-end'}}>
+                <TouchableOpacity onPress={() => {this.openSettingsPage() }}>
+                  <Image source={ require('../../assets/images/setting1.png')} style={[styles.settingIcon,{marginBottom: '6%'}]} ></Image>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => {this.openDashboardPage() }}>
+                  <Image source={ require('../../assets/images/home1.png')} style={[styles.homeIcon,{marginBottom: '6%'}]} ></Image>
+                </TouchableOpacity>
+            </View>
+        </View>
         {detailBlock}
                <View style={styles.listContainer}>
-                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                   <Text style={[styles.listTitle, { flex: 1 }]}> Sensors{debug ? ' (' + Object.keys(this.props.bleDevices).length + ')' : ''}</Text>
-                   {!this.state.searching && displayList.length > 0 &&
-                     <Icon name="search" size={24} style={{ padding: 10 }} onPress={() => {
-                       this.setState({
-                         searching: true
-                       });
-                       var myInterval = setInterval(() => {
-                         if (this.search) {
-                           this.search.focus();
-                           clearInterval(myInterval);
-                         }
-                       }, 100);
-                     }} />
-                   }
-                 </View>
-                 {this.state.searching &&
-                   <SearchBar
-                     ref={search => this.search = search}
-                     lightTheme
-                     onChangeText={(filterKey) => this.setState({ filterKey })}
-                     onClear={() => this.onClearSearch()}
-                     placeholder='Search sensor...'
-                     containerStyle={{ backgroundColor: Constant.LIGHT_GREY_COLOR, padding: 2 }}
-                     inputContainerStyle={{ backgroundColor: Constant.WHITE_BACKGROUND_COLOR }}
-                     value={this.state.filterKey}
-                     inputStyle={{ fontSize: 16 }} />
+                <View style={{width:'100%' ,flexDirection:'row',alignItems:'flex-end',alignContent:'flex-end',alignSelf:'flex-end',justifyContent:'flex-end'}}>
+                    <TouchableOpacity style={[styles.roundButton, { backgroundColor: Constant.RED_COLOR }]} onPress={() => {
+                        this.showDeviceDiscoveryModal(true, false, true, false)
+                    if (this.provisionCallbackCharSubscription) {
+                        console.log('keepprovision callback');
 
-                 }
+                        this.provisionCallbackCharSubscription.remove();
+                    }
+
+                    if (this.discoverCharSubscription) {
+                        this.discoverCharSubscription.remove();
+                    }
+                    this.setState({
+                       callbackRegistredDevices: 0
+                       , showCancelButton: true, errorCode: 0
+                    })
+                    }}>
+                    <Text style={styles.buttonText}>Add New</Text>
+
+                    </TouchableOpacity>
+
+                </View>
                  {devicesList}
                  <View style={{ height: 10, backgroundColor: '#fff' }}></View>
                </View>
@@ -1915,10 +1908,7 @@ async updateSensorName (value,device)
                  <View style={styles.fullModalContainer}>
                    <View style={styles.modalContainer}>
                      <View style={styles.modalTitle}>
-                       <Image
-                         source={require('../../assets/images/search_27.png')}
-                         style={styles.modalTitleAddButton}
-                       />
+
                        <Text> Discover New Sensors </Text>
                      </View>
                      {deviceDiscoveryContainer}
@@ -1939,18 +1929,39 @@ const styles = StyleSheet.create({
     backgroundColor: Constant.LIGHT_GREY_COLOR
   },
   greenBackgroundContainer: {
-    backgroundColor: Constant.PRIMARY_COLOR,
+    backgroundColor: Constant.RED_COLOR,
     width: '100%',
-    height: '25%',
+    height: height * 0.095,
     position: 'absolute'
   },
+  titleTextContainer: {
+     flexDirection: 'row',
+     alignItems: "center",
+  },
+  titleText: {
+     fontSize: RFPercentage(4.5),
+     color: Constant.WHITE_TEXT_COLOR,
+     fontWeight: "bold",
+     marginLeft: width * 0.03,
+  },
+ settingIcon: {
+    height: height * 0.04,
+    width: width * 0.08,
+    marginHorizontal:width * 0.03
+  },
+ homeIcon: {
+    height: height * 0.045,
+    width: width * 0.068,
+    marginHorizontal:width * 0.03
+ },
   listContainer: {
     flex: 1,
     flexDirection: 'column',
     backgroundColor: Constant.WHITE_BACKGROUND_COLOR,
     marginLeft: '5%',
     marginRight: '5%',
-    borderRadius: 5
+    borderRadius: 5,
+    marginTop: height * 0.065,
   },
   listTitle: {
     padding: 10,
@@ -1960,18 +1971,17 @@ const styles = StyleSheet.create({
 
   listItem: {
     width: "100%",
-    borderTopWidth: 2,
+    borderTopWidth: 3,
     borderColor: Constant.LIGHT_GREY_COLOR,
     padding: 10,
-    flexDirection: "column",
-    alignItems: "center",
-    backgroundColor: '#636363',
+    backgroundColor: Constant.GREY_COLOR,
+    height: height * 0.1,
   },
   activityIndicator: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    color : '#ff9900'
+    color : Constant.RED_COLOR,
   },
   detailBlock: {
     backgroundColor: '#636363',
@@ -1994,12 +2004,12 @@ const styles = StyleSheet.create({
     color: Constant.WHITE_TEXT_COLOR
   },
   roundButton: {
-    flexDirection: 'row',
     justifyContent: "center",
-    alignItems: 'center',
-    padding: 5,
-    borderRadius: 16,
-    marginRight: 12
+    padding: 6,
+    borderRadius: 12,
+    marginRight: 12,
+    height:width * 0.09,
+    width:width * 0.23
   },
   cancelButton: {
     width: 60,
@@ -2015,11 +2025,10 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 12,
     marginLeft: 12,
-    backgroundColor: Constant.PRIMARY_COLOR,
+    backgroundColor: Constant.RED_COLOR,
   },
   buttonText: {
-    fontSize: 12,
-    marginLeft: 7,
+    fontSize: RFPercentage(2.2),
     color: Constant.WHITE_TEXT_COLOR,
     fontWeight: "bold",
     textAlign: 'center'

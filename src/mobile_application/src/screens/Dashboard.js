@@ -64,6 +64,48 @@ class Dashboard extends Component {
           <ActivityIndicator size='large' />
         </View>)
   }
+  openSettingPage = () =>
+  {
+    let screenName = 'SettingsScreen';
+    Navigation.push(this.props.componentId, {
+      component: {
+        name: screenName,
+        passProps: {
+
+        },
+        options: {
+          topBar: {
+            visible: true,
+            animate: true,
+            elevation: 0,
+            shadowOpacity: 0,
+            drawBehind: false,
+            hideOnScroll: false,
+            background: {
+              color: Constant.RED_COLOR,
+            },
+            backButton: {
+              color: '#fff',
+             // icon:require('../../assets/images/back.png')
+            },
+            title: {
+              text: "Previous",
+              color: '#fff',
+            }
+          },
+          layout: {
+            orientation: ['portrait'] // An array of supported orientations
+          },
+          sideMenu: {
+            left: {
+              visible: false,
+              enabled: Platform.OS === 'android',
+            }
+          }
+        }
+      }
+    });
+  }
 
   openGatewayPage = () => {
     let screenName = 'GrowAreasScreen';
@@ -110,11 +152,12 @@ class Dashboard extends Component {
   render() {
     return (
       <View style={[styles.container, { flex: 2 }]}>
-        <View style={{width:'40%' ,flexDirection:'row',alignItems:'flex-end',alignContent:'flex-end',alignSelf:'flex-end',justifyContent:'flex-end'}}>
-         <Image source={ require('../../assets/images/setting.png')} 
-         style={styles.settingIcon}
-         />
-         </View>
+             <View style={{width:'40%' ,flexDirection:'row',alignItems:'flex-end',alignContent:'flex-end',alignSelf:'flex-end',justifyContent:'flex-end'}}>
+                <TouchableOpacity  onPress={() => {this.openSettingPage()}}>
+                     <Image source={ require('../../assets/images/setting.png')} style={styles.settingIcon}/>
+                </TouchableOpacity>
+             </View>
+
              <ImageBackground
                 source={require('../../assets/images/title_logo.png')} style={{ width: width * 0.9, marginTop: '2%', marginBottom: '5%',marginLeft:(width * 0.1),padding : '1%',height : (width * 0.7) * 0.45}}>
                </ImageBackground>
@@ -126,7 +169,7 @@ class Dashboard extends Component {
               <TouchableOpacity style={[styles.DashboardroundButton]} onPress={() => {this.openGatewayPage()}}>
                 <Text style={[styles.dashboardButtonText, { marginLeft: 0 }]}>GATEWAY VIEW</Text>
               </TouchableOpacity>
-            </View>
+              </View>
       </View>
     );
   }
@@ -153,8 +196,8 @@ const styles = StyleSheet.create({
     width : (width * 0.7) * 0.09
 },
 settingIcon: {
-  height: height * 0.05,
-  width: width * 0.07,
+  height: height * 0.04,
+  width: width * 0.08,
   marginHorizontal:width * 0.03
 },
   DashboardroundButton: {

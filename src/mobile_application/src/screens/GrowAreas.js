@@ -1182,9 +1182,19 @@ async deleteGatewayAPI(payload,device)
         },
         options: {
           topBar: {
-            title: {
-              text: growArea.gatewayName
-            }
+              visible: true,
+
+              background: {
+                 color: Constant.RED_COLOR,
+              },
+              backButton: {
+                 color: '#fff',
+              // icon:require('../../assets/images/back.png')
+              },
+              title: {
+                 text: "Previous",
+                 color: '#fff',
+              }
           }
         }
       }
@@ -1198,12 +1208,37 @@ async deleteGatewayAPI(payload,device)
         name: 'DashboardScreen',
         options: {
           topBar: {
-            visible: false
+            visible: true
           }
         }
       }
     });
   }
+
+  openSettingsPage = () => {
+        Navigation.push(this.props.componentId, {
+          component: {
+            name: 'SettingsScreen',
+            options: {
+              topBar: {
+                visible: true,
+
+                background: {
+                   color: Constant.RED_COLOR,
+                },
+                backButton: {
+                  color: '#fff',
+                 // icon:require('../../assets/images/back.png')
+                },
+                title: {
+                  text: "Previous",
+                  color: '#fff',
+                }
+              }
+            }
+          }
+        });
+    }
 
   getGatewayList()
   {
@@ -1351,22 +1386,22 @@ async deleteGatewayAPI(payload,device)
           <View style={(index === listData.length - 1) ? [styles.listItem, {
             borderBottomWidth: 2
           }] : styles.listItem}>
-            <View style={{ width: '80%' }}>
+            <View style={{ width: '80%' }} >
               <TouchableOpacity onPress={() => {this.onViewDevices(item) }}>
-                <View style={{}}>
-                  <Text style={{ fontWeight: 'bold' }} >{item.gatewayName}</Text>
-                  <Text style={{}}>{item.macAddress}</Text>
+                <View style={{}} color={Constant.WHITE_TEXT_COLOR}>
+                  <Text style={{ fontWeight: 'bold',color:'white' }} >{item.gatewayName}</Text>
+                  <Text style={{color:'white'}} >{item.macAddress}</Text>
                 </View>
               </TouchableOpacity>
             </View>
             <TouchableOpacity style={{ flex: 1, height: 35 }} onPress={() => { }} />
             <View style={{ flexDirection: 'row' }}>
               {/* <Icon name="wifi" size={24} style={item.latest_heartbeat_timestamp === 'true' ? { paddingRight: 10, color: Constant.PRIMARY_COLOR } : { paddingRight: 10, color: 'red' }} /> */}
-              <MaterialIcon name="edit" size={24} style={{ paddingRight: 12, color: 'grey' }} onPress={() => {
+              <MaterialIcon name="edit" size={24} style={{ padding: (0, 0, 0, 5), color: '#fff',backgroundColor: Constant.BLUE_COLOR }} color={Constant.WHITE_TEXT_COLOR} onPress={() => {
               this.setState({editedItem:item});
               this.setVisibilityOfModal();
               }} />
-              <Icon name="delete" size={24} style={{ paddingRight: 10, color: 'grey' }} onPress={() => {
+              <MaterialIcon name="delete"  size={24} style={{ padding: (0, 0, 0, 5), color: '#fff',marginLeft: '5%',backgroundColor: Constant.BLUE_COLOR }} color={Constant.WHITE_TEXT_COLOR} onPress={() => {
                   Alert.alert('Delete gateway', 'Are you sure you want to delete ' + item.gatewayName + '?'+' All the sensor provision with this gateway will also get deleted',
                     [
                       {
@@ -1396,19 +1431,19 @@ async deleteGatewayAPI(payload,device)
                          dialogIsVisible={this.isVisible}
                          closeDialogInput={() => {this.setVisibilityOfModal()}}
                          submitInput={(textValue) => this.updateGatewayName(textValue,this.state.editedItem)}
-                         outerContainerStyle={{ backgroundColor: '#fff',opacity : 0.45 }}
-                        containerStyle={{ backgroundColor: '#fff', borderColor: 'black', borderWidth: 2}}
-                        titleStyle={{ color: 'black',fontSize : RFPercentage(4) }}
+                         outerContainerStyle={{ backgroundColor: '#737373',opacity: 0.8}}
+                        containerStyle={{ backgroundColor: '#d91f2b', borderColor: 'black', borderWidth: 2}}
+                        titleStyle={{ color: 'white',fontSize : RFPercentage(4) }}
                         title="Rename Gateway"
-                        subTitleStyle={{ color: 'black' }}
-                        subtitle="Update Name of Gateway"
+                        subTitleStyle={{ color: 'white' }}
+                        subtitle="Edit Gateway Name"
                         placeholderInput= ""
                         placeholderTextColor="white"
-                        textInputStyle={{ borderColor: 'black',color: 'black', borderWidth: 2,fontStyle: 'bold',fontSize : RFPercentage(3)  }}
+                        textInputStyle={{ borderColor: 'white',color: 'black', borderWidth: 2,fontStyle: 'bold',fontSize : RFPercentage(2)  }}
                         secureTextEntry={false}
                         buttonsStyle={{ borderColor: 'white' }}
-                        textCancelStyle={{ color: 'black',fontSize: RFPercentage(2.5) }}
-                       submitTextStyle={{ color: 'black', fontStyle: 'bold' ,fontSize: RFPercentage(2.5)}}
+                        textCancelStyle={{ color: 'white',fontSize: RFPercentage(2.5) }}
+                       submitTextStyle={{ color: 'white', fontStyle: 'bold' ,fontSize: RFPercentage(2.5)}}
                        cancelButtonText="CANCEL"
                        submitButtonText="RENAME"
                />
@@ -1419,7 +1454,7 @@ async deleteGatewayAPI(payload,device)
           <RefreshControl
             refreshing={this.state.refreshing}
             onRefresh={this._onRefresh}
-            colors={['red', 'green', 'blue']}
+            colors={['#d91f2b','#d91f2b','#d91f2b']}
           />
         }
       />
@@ -1441,7 +1476,7 @@ async deleteGatewayAPI(payload,device)
             <RefreshControl
               refreshing={this.state.refreshing}
               onRefresh={this._onRefresh}
-              colors={['red', 'green', 'blue']}
+              colors={['#d91f2b','#d91f2b','#d91f2b']}
             />
           }>
           <Text color="#00ff00">No Gateway found.</Text>
@@ -1590,7 +1625,7 @@ async deleteGatewayAPI(payload,device)
           <View style={{width:'60%'}}><Text style={styles.titleText}> Gateway</Text></View>
         
           <View style={{width:'40%' ,flexDirection:'row',alignItems:'flex-end',alignContent:'flex-end',alignSelf:'flex-end',justifyContent:'flex-end'}}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => {this.openSettingsPage() }}>
           <Image source={ require('../../assets/images/setting1.png')} style={styles.settingIcon} ></Image>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => {this.openDashboardPage() }}>
@@ -1680,13 +1715,13 @@ const styles = StyleSheet.create({
     marginLeft: width * 0.03,
   },
   settingIcon: {
-    height: height * 0.05,
-    width: width * 0.07,
+    height: height * 0.04,
+    width: width * 0.08,
     marginHorizontal:width * 0.03
   },
   homeIcon: {
-    height: height * 0.055,
-    width: width * 0.07,
+    height: height * 0.045,
+    width: width * 0.068,
     marginHorizontal:width * 0.03
   },
   titleTextContainer: {
@@ -1718,7 +1753,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 12,
     height:width * 0.09,
-    width:width * 0.2
+    width:width * 0.23
   },
   addNewButton: {
     backgroundColor: Constant.ADD_NEW_GATEWAY_BUTTON_COLOR,
@@ -1805,7 +1840,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingLeft: 10,
     paddingRight: 6,
-    height: 50,
+    height: 60,
+    backgroundColor: Constant.GREY_COLOR,
   },
   gatewayItem: {
     width: "100%",

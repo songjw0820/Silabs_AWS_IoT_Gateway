@@ -4,6 +4,7 @@ import DevicesScreen from './src/screens/Devices';
 import LoginScreen from './src/screens/Login';
 import SideDrawer from './src/screens/SideDrawer';
 import PublishScreen from './src/screens/PublishData';
+import SettingsScreen from './src/screens/Settings';
 import HistoricalChart from './src/screens/HistoricalChart';
 import { AsyncStorage, Alert } from 'react-native';
 import { Navigation } from 'react-native-navigation';
@@ -37,6 +38,8 @@ Navigation.registerComponentWithRedux('SideDrawer', () => SideDrawer, Provider, 
 Navigation.registerComponentWithRedux('DashboardScreen', () => Dashboard, Provider, store);
 
 Navigation.registerComponentWithRedux('Chart', () => HistoricalChart, Provider, store);
+
+Navigation.registerComponentWithRedux('SettingsScreen', () => SettingsScreen, Provider, store);
 
 
 

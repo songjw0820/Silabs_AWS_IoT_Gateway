@@ -113,8 +113,9 @@ class Login extends React.Component {
 
 async componentDidMount() {
     const userInfo = await Auth.currentAuthenticatedUser();
-
+//    Auth.userAttributes(userInfo).then(data => {console.log("follow up attributes: ", data);})
     let email=JSON.stringify(userInfo.signInUserSession.idToken.payload.email);
+    let phNumber = JSON.stringify(userInfo.signInUserSession.idToken.payload.phone_number);
     let url = Urls.GET_USER+userInfo.signInUserSession.idToken.payload.email;
     let gatewaylist=[];
     let sensorlist=[];
@@ -135,6 +136,7 @@ async componentDidMount() {
            alert('Error occured while featching user info');
          }
         AsyncStorage.setItem('email',email);
+        AsyncStorage.setItem('number',phNumber);
         AsyncStorage.setItem('accessToken',JSON.stringify(userInfo.signInUserSession.accessToken.jwtToken)).then((token) => {
             this.setState({
             isLoading: false
