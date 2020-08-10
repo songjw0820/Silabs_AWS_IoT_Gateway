@@ -95,6 +95,8 @@ export const DEFAULT_NAVIGATOR_STYLE = {
 
 export const CONNECTION_TIMEOUT = 60000;
 
+export const  propertyList = ["temperature","CO2","PIR","humidity"];
+
 export const rootStack = {
   0: 'FACILITY',
   1: 'CONTAINER',

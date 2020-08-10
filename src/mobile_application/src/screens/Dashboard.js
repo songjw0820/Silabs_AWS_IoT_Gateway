@@ -149,6 +149,49 @@ class Dashboard extends Component {
     });
   }
 
+  openSensorViewPage = () => {
+    let screenName = 'Chart';
+    Navigation.push(this.props.componentId, {
+      component: {
+        name: screenName,
+        passProps: {
+         
+        },
+        options: {
+          topBar: {
+            visible: true,
+            animate: true,
+            elevation: 0,
+            shadowOpacity: 0,
+            drawBehind: false,
+            hideOnScroll: false,
+            height:44,
+            background: {
+              color: Constant.RED_COLOR,
+            },
+            backButton: {
+              color: '#fff',
+            },
+            title: {
+              text: "Previous",
+              color: '#fff',
+            }
+          },
+          layout: {
+            orientation: ['portrait'] // An array of supported orientations
+          },
+          sideMenu: {
+            left: {
+              visible: false,
+              enabled: Platform.OS === 'android',
+            }
+          }
+        }
+      }
+    });
+  }
+
+
   render() {
     return (
       <View style={[styles.container, { flex: 2 }]}>
@@ -163,7 +206,7 @@ class Dashboard extends Component {
                </ImageBackground>
              <Text style={[styles.dashboardTitleText, { marginLeft: 0 }]}> EFR32 {"\n"}IoT {"\n"}Gateway</Text>
              <View style={{ flexDirection: 'column',marginLeft:(width*0.15),marginTop:(width*0.2)}}>
-              <TouchableOpacity style={[styles.DashboardroundButton]} onPress={() => {}}>
+              <TouchableOpacity style={[styles.DashboardroundButton]} onPress={() => {this.openSensorViewPage()}}>
                 <Text style={[styles.dashboardButtonText, { marginLeft: 0 }]}>SENSOR VIEW</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.DashboardroundButton]} onPress={() => {this.openGatewayPage()}}>

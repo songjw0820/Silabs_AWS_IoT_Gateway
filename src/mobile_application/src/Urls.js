@@ -19,6 +19,8 @@ export const BASE_URL = production ? VM_URL : LOCAL_WEB_APP_URL;
 
 export const AWS_BASE_URL = 'https://bym6ctlh6e.execute-api.us-east-2.amazonaws.com/dev';
 
+export const EMBEDDED_BASE_URL = 'https://d1h5qdpe8s159w.cloudfront.net/index.html?dashboardid=69f3d390-b095-435d-b9ba-469e287fc573&userarn=arn:aws:quicksight:us-east-1:454143665149:user/default/viren.moradiya@einfochips.com&apigurl=https%3A%2F%2F57heepvsia.execute-api.us-east-2.amazonaws.com%2Fprod%2FgetDashboardEmbedURL%3F';
+
 export const DELETE_GROWAREA = AWS_BASE_URL + '/deletething';
 export const GET_USER= AWS_BASE_URL + '/getuser/';
 export const RENAME_GATEWAY_SENSOR=AWS_BASE_URL + '/renamedevice';
