@@ -8,8 +8,11 @@ import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 import * as Urls from '../Urls';
 // New ----
 import { AmplifyTheme } from 'aws-amplify-react-native';
-const {width,height} = Dimensions.get('window');
 import { withAuthenticator } from "aws-amplify-react-native"
+import * as Constant from '../Constant';
+
+const {width,height} = Dimensions.get('window');
+
 
 //Amplify.configure(config)
 Amplify.configure({
@@ -35,14 +38,14 @@ const new_theme = {
   button: {
     alignItems: 'center',
     padding: '1%',
-    backgroundColor: '#ff9900',
+    backgroundColor: Constant.RED_COLOR,
     marginTop: height * 0.03,
   },
 
   buttonText: {
       fontSize: RFPercentage(2.5),
       textAlign: 'center',
-      color: '#ffffff',
+      color: Constant.WHITE_TEXT_COLOR,
   },
   errorRowText: {
   		fontSize: RFPercentage(1.9),
@@ -86,7 +89,7 @@ const new_theme = {
    	...AmplifyTheme.buttonDisabled,
    	    alignItems: 'center',
         padding: '1%',
-        marginTop: height * 0.03,
+        marginTop: height * 0.03
    	},
 
     sectionHeaderText:
@@ -113,7 +116,7 @@ class Login extends React.Component {
 
 async componentDidMount() {
     const userInfo = await Auth.currentAuthenticatedUser();
-//    Auth.userAttributes(userInfo).then(data => {console.log("follow up attributes: ", data);})
+    Auth.userAttributes(userInfo).then(data => {console.log("follow up attributes: ", data);})
     let email=JSON.stringify(userInfo.signInUserSession.idToken.payload.email);
     let phNumber = JSON.stringify(userInfo.signInUserSession.idToken.payload.phone_number);
     let url = Urls.GET_USER+userInfo.signInUserSession.idToken.payload.email;
@@ -163,7 +166,7 @@ async componentDidMount() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#fff",
+		backgroundColor: Constant.LIGHT_GREY_COLOR,
 		alignItems: "center",
 		justifyContent: "center"
 	}

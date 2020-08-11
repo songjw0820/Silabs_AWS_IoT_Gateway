@@ -200,7 +200,7 @@ class GrowAreas extends Component {
   }
 
   showGatewayDiscoveryModalForDeleteGateway(visible) {
-    this.props.uiStartLoading("Deleting gateway....");
+    this.props.uiStartLoading("Deleting Gateway....");
     if (visible) {
       this.gatewayCharacteristics = {};
       const subscription = this.props.bleManager.onStateChange((state) => {
@@ -458,7 +458,7 @@ class GrowAreas extends Component {
                  },
                  {
                    text: 'Delete', onPress: async() => {
-                    this.props.uiStartLoading("Deleting gateway from AWS cloud..");
+                    this.props.uiStartLoading("Deleting Gateway ...");
                     let url = Urls.DELETE_GROWAREA;
                     console.log("payload for gateway delete ---:"+JSON.stringify(payload));
                     try{
@@ -471,12 +471,12 @@ class GrowAreas extends Component {
                             console.log("response in json---"+msg);
                             this.props.uiStopLoading();
                             this.setGatewayAfterDeletion(this.state.gatewayId);
-                            alert("Gateway deleted successfully from AWS cloud. Need to Factory reset");
+                            alert("Gateway deleted successfully. Please do Factory Reset of Gateway");
                           }
                           else
                           {
                             this.props.uiStopLoading();
-                            alert("error received from AWS API");
+                            alert("Something went wrong while deletion. Please try again");
                           }
                     }catch(err)
                     {
@@ -641,7 +641,7 @@ createGatewayDeletionPayload()
 
 async deleteGatewayAPI(payload,device)
 {
-  this.props.uiStartLoading("Deleting gateway from AWS cloud..");
+  this.props.uiStartLoading("Deleting Gateway ...");
   let url = Urls.DELETE_GROWAREA;
   console.log("payload for gateway delete ---:"+JSON.stringify(payload));
   try{
@@ -659,7 +659,7 @@ async deleteGatewayAPI(payload,device)
         else
         {
           this.props.uiStopLoading();
-          alert("error received from AWS API");
+          alert("Something went wrong while deletion. Please try again");
         }
       }catch(err)
       {
@@ -1331,7 +1331,7 @@ async deleteGatewayAPI(payload,device)
              else
              {
                  this.props.uiStopLoading();
-                 alert("Error received from AWS API. Please try again");
+                 alert("Something went wrong while updating. Please try again");
                  return null;
              }
           }catch(err)
@@ -1340,8 +1340,8 @@ async deleteGatewayAPI(payload,device)
              alert(err.message);
              return null;
           }
-      this.props.uiStartLoading("Updating Sensor Name....");
-      let sensors = this.state.gateways;
+      this.props.uiStartLoading("Updating Gateway Name....");
+      let gateways = this.state.gateways;
       console.log('Gateway List....',gateways);
       gateways.map((item) => {
               if(item.gatewayId === device.gatewayId)
@@ -1433,7 +1433,7 @@ async deleteGatewayAPI(payload,device)
                          submitInput={(textValue) => this.updateGatewayName(textValue,this.state.editedItem)}
                          outerContainerStyle={{ backgroundColor: '#737373',opacity: 0.8}}
                         containerStyle={{ backgroundColor: '#d91f2b', borderColor: 'black', borderWidth: 2}}
-                        titleStyle={{ color: 'white',fontSize : RFPercentage(4) }}
+                        titleStyle={{ color: 'white',fontSize : RFPercentage(3) }}
                         title="Rename Gateway"
                         subTitleStyle={{ color: 'white' }}
                         subtitle="Edit Gateway Name"

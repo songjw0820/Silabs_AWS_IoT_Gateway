@@ -253,7 +253,7 @@ class Devices extends Component {
             else
             {
               this.props.uiStopLoading();
-              alert("error received from AWS API");
+              alert("Something went wrong while deletion. Please try again");
             }
           }catch(err)
           {
@@ -273,7 +273,7 @@ class Devices extends Component {
 
               })
          console.log('Delete Sensor from sensor list');
-        alert("Sensor deleted Successfully");
+        alert("Sensor deleted Successfully. Please do Factory Reset of Gateway");
         this.props.uiStopLoading();
         this._onRefresh();
       }
@@ -532,14 +532,13 @@ class Devices extends Component {
                           const msg = await response.json();
                           console.log("response in json---"+msg);
                           this.props.uiStopLoading();
-                          alert("Gateway deleted successfully from AWS cloud. Need to Factory reset");
                           this.setSensorListAfterDeletion(sensorId);
                           this._onRefresh();
                         }
                         else
                         {
                           this.props.uiStopLoading();
-                          alert("error received from AWS API");
+                          alert("Something went wrong while deletion. Please try again");
                         }
                    }catch(err)
                    {
@@ -1510,7 +1509,7 @@ async updateSensorName (value,device)
            else
            {
                this.props.uiStopLoading();
-               alert("Error received from AWS API. Please try again");
+               alert("Something went wrong while updating. Please try again");
                return null;
            }
         }catch(err)
@@ -1591,21 +1590,21 @@ async updateSensorName (value,device)
                          dialogIsVisible={this.isVisible}
                          closeDialogInput={() => {this.showRenameModal()}}
                          submitInput={(textValue) => this.updateSensorName(textValue,this.state.editedSensor)}
-                         outerContainerStyle={{ backgroundColor: '#fff',opacity : 0.45 }}
-                        containerStyle={{ backgroundColor: '#fff', borderColor: 'black', borderWidth: 2}}
-                        titleStyle={{ color: 'black',fontSize : RFPercentage(4) }}
-                        title="Rename Sensor"
-                        subTitleStyle={{ color: 'black' }}
-                        subtitle="Update Name of Sensor"
-                        placeholderInput= ""
-                        placeholderTextColor="white"
-                        textInputStyle={{ borderColor: 'black',color: 'black', borderWidth: 2,fontStyle: 'bold',fontSize : RFPercentage(3)  }}
-                        secureTextEntry={false}
-                        buttonsStyle={{ borderColor: 'white' }}
-                        textCancelStyle={{ color: 'black',fontSize: RFPercentage(2.5) }}
-                       submitTextStyle={{ color: 'black', fontStyle: 'bold' ,fontSize: RFPercentage(2.5)}}
-                       cancelButtonText="CANCEL"
-                       submitButtonText="RENAME"
+                         outerContainerStyle={{ backgroundColor: '#737373',opacity: 0.8}}
+                         containerStyle={{ backgroundColor: '#d91f2b', borderColor: 'black', borderWidth: 2}}
+                         titleStyle={{ color: 'white',fontSize : RFPercentage(3) }}
+                         title="Rename Sensor"
+                         subTitleStyle={{ color: '#d91f2b' }}
+                         subtitle=""
+                         placeholderInput= ""
+                         placeholderTextColor="white"
+                         textInputStyle={{ borderColor: 'white',color: 'black', borderWidth: 2,fontStyle: 'bold',fontSize : RFPercentage(2)  }}
+                         secureTextEntry={false}
+                         buttonsStyle={{ borderColor: 'white' }}
+                         textCancelStyle={{ color: 'white',fontSize: RFPercentage(2.5) }}
+                         submitTextStyle={{ color: 'white', fontStyle: 'bold' ,fontSize: RFPercentage(2.5)}}
+                         cancelButtonText="CANCEL"
+                         submitButtonText="RENAME"
                />
             </View>
 
