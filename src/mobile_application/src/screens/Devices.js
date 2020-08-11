@@ -75,6 +75,7 @@ class Devices extends Component {
         showCancelButton: false,
         waitingDeviceLoader: false,
         sensors: [],
+        email:'',
         chartflag: false,
         gatewayforSensor:'',
         editedSensor: '',
@@ -95,6 +96,10 @@ class Devices extends Component {
         this._onRefresh();
         this.forceUpdate();
         this.visible = true;
+        AsyncStorage.getItem('email').then(response =>{
+            let email = JSON.parse(response);
+            this.setState({email: email});
+        });
         AsyncStorage.getItem('accessToken').then(async (authToken) => {
         this.setState({ refreshing: true, searching: false, filterKey: '', token: authToken });
 
@@ -127,7 +132,11 @@ class Devices extends Component {
     }
 
      _onRefresh = () => {
-     this.props.uiStartLoading("Fetching Sensor Data");
+        this.props.uiStartLoading("Fetching Sensor Data");
+        AsyncStorage.getItem('email').then(response =>{
+          let email = JSON.parse(response);
+            this.setState({email: email});
+        });
       AsyncStorage.getItem('accessToken').then((authToken) => {
          this.setState({ refreshing: true, searching: false, filterKey: '', token: authToken });
          this.getSensorList();
@@ -582,7 +591,7 @@ class Devices extends Component {
             console.log('this.state.isRegistrationProcessCompleted', this.state.isRegistrationProcessCompleted);
             if (!this.state.isRegistrationProcessCompleted) {
               this.setState({ deviceRegistrationModalVisible: false, isRegistrationProcessCompleted: true, errorCode: 1 })
-
+              this.callGetUserAPI();
               this.onTimeRegistredDevices = 0;
               this._onRefresh();
               this.disconnectBleConnection();
@@ -982,6 +991,30 @@ class Devices extends Component {
       }
     }, 'myDeviceProvisionCallbackTransaction');
   }
+
+  async callGetUserAPI() {
+    
+    let url = Urls.GET_USER + this.state.email;
+    console.log("url for calling---"+url);
+    try {
+      const response = await fetch(url, { method: "GET", headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' } })
+      if (response.ok) {
+        const result = await response.json();
+        console.log("response in json---" + JSON.stringify(result));
+        AsyncStorage.setItem('sensorList', JSON.stringify(result['sensors']));
+        this.setState({ sensors: result['sensors'] })
+      }
+      else
+      {
+        console.log("error in api response");
+      }
+
+    } catch (err) {
+      console.log("error occured from calling get user API");
+    }
+
+  }
+
 
   scanAndConnect = (inBackground) => {
     if (this.props.bleManager) {

@@ -17,13 +17,23 @@ export const WEB_SOCKET_URL = production ? PRODUCTION_WEBSOCKET_URL : LOCAL_WEBS
 
 export const BASE_URL = production ? VM_URL : LOCAL_WEB_APP_URL;
 
-export const AWS_BASE_URL = 'https://bym6ctlh6e.execute-api.us-east-2.amazonaws.com/dev';
-
-export const EMBEDDED_BASE_URL = 'https://d1h5qdpe8s159w.cloudfront.net/index.html?dashboardid=69f3d390-b095-435d-b9ba-469e287fc573&userarn=arn:aws:quicksight:us-east-1:454143665149:user/default/viren.moradiya@einfochips.com&apigurl=https%3A%2F%2F57heepvsia.execute-api.us-east-2.amazonaws.com%2Fprod%2FgetDashboardEmbedURL%3F';
+export const API_ID = 'r1dlsp36ul'
+export const REGION= 'us-east-1'
+export const STAGE_NAME= 'dev'
+export const AWS_BASE_URL=`https://${API_ID}.execute-api.${REGION}.amazonaws.com/${STAGE_NAME}`
 
 export const DELETE_GROWAREA = AWS_BASE_URL + '/deletething';
 export const GET_USER= AWS_BASE_URL + '/getuser/';
 export const RENAME_GATEWAY_SENSOR=AWS_BASE_URL + '/renamedevice';
+
+export const EMBEDDED_BASE_URL = 'https://d1o8a43pfnmvbw.cloudfront.net/index.html';
+export const USER_ARN = 'arn:aws:quicksight:us-east-1:454143665149';
+export const APIG_URL = 'https%3A%2F%2Ftahln9rxsh.execute-api.us-east-1.amazonaws.com%2Fprod%2FgetDashboardEmbedURL%3F';
+export const TEMPERATURE_DASHBOARD = 'a05fee11-069a-4572-bfce-77b1c3f489bb';
+export const HUMIDITY_DASHBOARD = '7517a001-605c-4e1c-8618-d353f80a8644';
+export const CO2_DASHBOARD = '2351b183-81d7-4ebe-8cd9-5d121ce53c64';
+export const PIR_DASHBOARD = 'a9917587-892e-4833-a751-6d8fc62884c5';
+export const ALL_DASHBOARD = '69f3d390-b095-435d-b9ba-469e287fc573';
 
 export const GET_SERVER_VERSION = BASE_URL + '/release/version';
 export const GET_ALL_FACILITIES = BASE_URL + '/facilities';

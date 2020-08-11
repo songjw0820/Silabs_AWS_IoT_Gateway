@@ -66,6 +66,7 @@ class GrowAreas extends Component {
       gateways: [],
       sensors:[],
       curerentUser: '',
+      email:'',
       seleneVersion: '',
       selectedGateway:'',
       editedItem : '',
@@ -131,6 +132,7 @@ class GrowAreas extends Component {
       let appleKey = response[1][1];
       let email=response[3][1];
       console.log("finally email----"+email);
+      this.setState({ email: email});
       if (this.search) this.search.clear();
       this.setState({ refreshing: false });
     }).catch((e) => {
