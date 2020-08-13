@@ -120,7 +120,7 @@ class Login extends React.Component {
 
 async componentDidMount() {
     const userInfo = await Auth.currentAuthenticatedUser();
-    Auth.userAttributes(userInfo).then(data => {console.log("follow up attributes: ", data);})
+
     let email=JSON.stringify(userInfo.signInUserSession.idToken.payload.email);
     let phNumber = JSON.stringify(userInfo.signInUserSession.idToken.payload.phone_number);
     let url = Urls.GET_USER+userInfo.signInUserSession.idToken.payload.email;
@@ -135,6 +135,11 @@ async componentDidMount() {
             console.log("response in json---"+JSON.stringify(result));
             AsyncStorage.setItem('listGateway',JSON.stringify(result['gateways']));
             AsyncStorage.setItem('sensorList',JSON.stringify(result['sensors']));
+           if(gatewaylist.length !== 0)
+           {
+                AsyncStorage.setItem('emailNotify',JSON.stringify(result['gateways'][0].sendEmailNotifications));
+                AsyncStorage.setItem('SmsNotify',JSON.stringify(result['gateways'][0].sendSmsNotifications));
+           }
           }
         else
          {

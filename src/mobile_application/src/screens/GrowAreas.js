@@ -1061,6 +1061,8 @@ async deleteGatewayAPI(payload,device)
                     }).catch((error) => {
                             console.log('error in saving name', error);
                         })
+                AsyncStorage.setItem('emailNotify',true);
+                AsyncStorage.setItem('SmsNotify',false);
                 alert(payload['statusMessage']);
                 this.disconnectBleConnection();
               }else
@@ -1315,7 +1317,9 @@ async deleteGatewayAPI(payload,device)
 
        this.props.uiStartLoading("Updating Gateway Name....");
        let url = Urls.RENAME_GATEWAY_SENSOR;
-       let payload = [{"gatewayName":value,"deviceType":Constant.GATEWAY_TYPE, "gatewayId":device.gatewayId}]
+       let emailState = AsyncStorage.getItem('emailNotify');
+       let smsState = AsyncStorage.getItem('SmsNotify');
+       let payload = [{"gatewayName":value,"deviceType":Constant.GATEWAY_TYPE, "gatewayId":device.gatewayId,'sendEmailNotifications': emailState,'sendSmsNotifications' : smsState}]
 
        console.log("payload for Sensor delete ---:"+JSON.stringify(payload));
        try{
@@ -1439,7 +1443,7 @@ async deleteGatewayAPI(payload,device)
                         title="Rename Gateway"
                         subTitleStyle={{ color: 'white' }}
                         subtitle="Edit Gateway Name"
-                        placeholderInput= ""
+                        placeholderInput= " "
                         placeholderTextColor="white"
                         textInputStyle={{ borderColor: 'white',color: 'black', borderWidth: 2,fontStyle: 'bold',fontSize : RFPercentage(2)  }}
                         secureTextEntry={false}

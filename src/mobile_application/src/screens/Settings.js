@@ -46,9 +46,16 @@ class Settings extends Component {
           let email = JSON.parse(response[1][1]);
           let number =JSON.parse(response[2][1]);
           let gateways = JSON.parse(response[3][1]);
-
-          this.setState({eButtonValue: gateways[0].sendEmailNotifications === true ? 'ON' : 'OFF'});
-          this.setState({pButtonValue: gateways[0].sendSmsNotifications === true ? 'ON' : 'OFF'});
+          if(gateways.length !== 0)
+          {
+            this.setState({eButtonValue: gateways[0].sendEmailNotifications === true ? 'ON' : 'OFF'});
+            this.setState({pButtonValue: gateways[0].sendSmsNotifications === true ? 'ON' : 'OFF'});
+          }
+          else
+          {
+                this.setState({eButtonValue: 'OFF'});
+                this.setState({pButtonValue: 'OFF'});
+          }
           this.setState({ token,email,number,gateways}, () => {
           });
         }).catch((e) => {
@@ -149,8 +156,9 @@ class Settings extends Component {
 
   openSensorPage = () => {
        let screenName = 'DevicesScreen';
-       Navigation.push(this.props.componentId, {
-         component: {
+
+        Navigation.push(this.props.componentId, {
+           component: {
            name: screenName,
            passProps: {
 
@@ -186,49 +194,9 @@ class Settings extends Component {
              }
            }
          }
-       });
-     }
-     openPhonePage = () => {
-          let screenName = 'PhoneScreen';
-          Navigation.push(this.props.componentId, {
-            component: {
-              name: screenName,
-              passProps: {
+         });
 
-              },
-              options: {
-                topBar: {
-                  visible: true,
-                  animate: true,
-                  elevation: 0,
-                  shadowOpacity: 0,
-                  drawBehind: false,
-                  hideOnScroll: false,
-                  height:44,
-                  background: {
-                    color: Constant.RED_COLOR,
-                  },
-                  backButton: {
-                    color: '#fff',
-                  },
-                  title: {
-                    text: "Previous",
-                    color: '#fff',
-                  }
-                },
-                layout: {
-                  orientation: ['portrait'] // An array of supported orientations
-                },
-                sideMenu: {
-                  left: {
-                    visible: false,
-                    enabled: Platform.OS === 'android',
-                  }
-                }
-              }
-            }
-          });
-        }
+     }
 
    async updateNotificationValue (notifyVal,notifyString)
    {
@@ -333,6 +301,50 @@ class Settings extends Component {
 
      else
      {
+      if(this.state.gateways.length !== 0)
+      {
+          emailView = ( <View>
+                            <TouchableOpacity style={styles.buttonView} onPress ={() => {
+                                this.updateNotificationValue (this.state.eButtonValue,'email')
+                            }}>
+                            <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.eButtonValue}</Text>
+                             </TouchableOpacity>
+                        </View>
+                      );
+          smsView = (
+                     <View style={{width:'60%',flexDirection:'row'}}>
+                      <TouchableOpacity onPress={() => {this.showModal()}}>
+                        <MaterialIcon name="edit" size={width * 0.056} style={{ paddingLeft: '12%',paddingTop: '12%', color: '#fff',height : width * 0.1,marginLeft: width * 0.09,width : width * 0.1,backgroundColor: Constant.RED_COLOR,borderRadius: 10,marginTop: '8%'}} />
+                      </TouchableOpacity>
+                        <TouchableOpacity  style={styles.buttonViewWithEdit} onPress ={() => {
+                            this.updateNotificationValue (this.state.pButtonValue,'phoneNo')
+                        }}>
+                             <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.pButtonValue}</Text>
+                        </TouchableOpacity>
+                     </View>
+
+          );
+      }
+      else
+      {
+           emailView = (
+            <View style = {styles.buttonView}>
+                 <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.eButtonValue}</Text>
+             </View>
+           );
+           smsView = (
+                      <View style={{width:'60%',flexDirection:'row'}}>
+                       <TouchableOpacity onPress={() => {this.showModal()}}>
+                         <MaterialIcon name="edit" size={width * 0.056} style={{ paddingLeft: '12%',paddingTop: '12%', color: '#fff',height : width * 0.1,marginLeft: width * 0.09,width : width * 0.1,backgroundColor: Constant.RED_COLOR,borderRadius: 10,marginTop: '8%'}} />
+                       </TouchableOpacity>
+                       <View style={styles.buttonViewWithEdit}>
+                        <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.pButtonValue}</Text>
+                       </View>
+                      </View>
+
+           );
+
+      }
 
       return (
         <View style={styles.container}>
@@ -355,28 +367,13 @@ class Settings extends Component {
                 <Text style={styles.emailText}>Email : </Text>
                  <Text style={[styles.emailText,{marginTop: '0.5%'}]}>{this.state.email}</Text>
             </View>
-            <View >
-              <TouchableOpacity style={styles.buttonView} onPress ={() => {
-              this.updateNotificationValue (this.state.eButtonValue,'email')
-              }}>
-                <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.eButtonValue}</Text>
-              </TouchableOpacity>
-            </View>
+            {emailView}
             <View><Text style= {styles.tapText}>(Data Charges may apply)</Text></View>
             <View style= {[styles.rectangle,{marginTop: '1%'}]}>
                  <Text style={[styles.emailText,{padding: (0,0,5,5)}]}>Text : </Text>
                  <Text style={[styles.emailText,{marginTop: '0.5%'}]}>{this.state.number}</Text>
             </View>
-         <View style={{width:'60%',flexDirection:'row'}}>
-          <TouchableOpacity onPress={() => {this.showModal()}}>
-            <MaterialIcon name="edit" size={width * 0.056} style={{ paddingLeft: '12%',paddingTop: '12%', color: '#fff',height : width * 0.1,marginLeft: width * 0.09,width : width * 0.1,backgroundColor: Constant.RED_COLOR,borderRadius: 10,marginTop: '8%'}} />
-          </TouchableOpacity>
-            <TouchableOpacity  style={styles.buttonViewWithEdit} onPress ={() => {
-                this.updateNotificationValue (this.state.pButtonValue,'phoneNo')
-            }}>
-                 <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.pButtonValue}</Text>
-            </TouchableOpacity>
-         </View>
+            {smsView}
              <DialogInput
                          dialogIsVisible={this.state.isVisible}
                          closeDialogInput={() => {this.showModal()}}
@@ -387,7 +384,7 @@ class Settings extends Component {
                          title="Mobile Number"
                          subTitleStyle={{ color: 'white' }}
                          subtitle="Update your Number"
-                         placeholderInput= ""
+                         placeholderInput= " "
                          placeholderTextColor="white"
                          textInputStyle={{ borderColor: 'white',color: 'black', borderWidth: 2,fontStyle: 'bold',fontSize : RFPercentage(2)  }}
                          secureTextEntry={false}

@@ -107,15 +107,6 @@ class Devices extends Component {
         console.log(JSON.stringify(this.props.deviceTypes));
 
          let growAreaId = this.growAreaId;
-
-//         if (growAreaId) {
-//            if (growAreaId ? (!this.props.devicesByGrowAreaId[growAreaId] || this.props.devicesByGrowAreaId[growAreaId].length === 0) : this.props.devices.length === 0) {
-//                this._onRefresh();
-//            }
-//         }
-//         else if (this.props.devices.length === 0) {
-//              this._onRefresh();
-//          }
          })
        }
 
@@ -1084,7 +1075,6 @@ class Devices extends Component {
           }
           return;
         }
-
         if (device.name && device.id) {
           this.connectedBle = device;
           console.log("Gateway Name:" + device.name + "\nDeviceId:" + device.id);
@@ -1580,6 +1570,7 @@ async updateSensorName (value,device)
  
 
   renderControls(info) {
+
         if (info.item.deviceUId) {
 
           let timeStamp = [];
@@ -1593,7 +1584,7 @@ async updateSensorName (value,device)
                         <Text style={{ alignSelf: 'flex-start', color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{debug ? info.item.eui64 + '-' : ''}{info.item.device_type}</Text>
                         <Text style={{ color: '#fff', fontSize: 17  }}>{debug ? info.item.id + '-' : ''}{info.item.eui64}</Text>
                     </View>
-                    <View style={{flexDirection: 'row', alignItems: "center",marginLeft: '15%',height: '70%',marginTop: '2.5%'}}>
+                    <View style={{flexDirection: 'row', alignItems: "center",marginLeft: '12%',height: '70%',marginTop: '2.5%'}}>
                     <MaterialIcon name="edit" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff',backgroundColor: Constant.BLUE_COLOR }} onPress={() =>
                     {
                         this.setState({editedSensor:info.item});
@@ -1627,9 +1618,9 @@ async updateSensorName (value,device)
                          containerStyle={{ backgroundColor: '#d91f2b', borderColor: 'black', borderWidth: 2}}
                          titleStyle={{ color: 'white',fontSize : RFPercentage(3) }}
                          title="Rename Sensor"
-                         subTitleStyle={{ color: '#d91f2b' }}
-                         subtitle=""
-                         placeholderInput= ""
+                         subTitleStyle={{ color: 'white' }}
+                         subtitle="Edit Sensor Name"
+                         placeholderInput= " "
                          placeholderTextColor="white"
                          textInputStyle={{ borderColor: 'white',color: 'black', borderWidth: 2,fontStyle: 'bold',fontSize : RFPercentage(2)  }}
                          secureTextEntry={false}
@@ -1657,7 +1648,6 @@ async updateSensorName (value,device)
       let growAreaId = this.props.selectedGrowArea ? this.growAreaId : null;
 
       listData = this.getSensorList() || [];
-  
       displayList = [];
       if(growAreaId != null)
       {
@@ -1940,7 +1930,10 @@ async updateSensorName (value,device)
                  <View style={styles.fullModalContainer}>
                    <View style={styles.modalContainer}>
                      <View style={styles.modalTitle}>
-
+                     <Image
+                           source={require('../../assets/images/add_24.png')}
+                          style={styles.modalTitleAddButton}
+                     />
                        <Text> Discover New Sensors </Text>
                      </View>
                      {deviceDiscoveryContainer}
@@ -2007,7 +2000,9 @@ const styles = StyleSheet.create({
     borderColor: Constant.LIGHT_GREY_COLOR,
     padding: 10,
     backgroundColor: Constant.GREY_COLOR,
-    height: height * 0.1,
+    height: height * 0.12,
+    paddingTop: '2%',
+    paddingBottom: '1%'
   },
   activityIndicator: {
     flex: 1,
@@ -2044,15 +2039,15 @@ const styles = StyleSheet.create({
     width:width * 0.23
   },
   cancelButton: {
-    width: 60,
+    width: width * 0.26,
     margin: 10,
     padding: 6,
     borderRadius: 12,
     marginLeft: 12,
-    backgroundColor: Constant.DARK_GREY_COLOR
+    backgroundColor: Constant.RED_COLOR
   },
   registerButton: {
-    width: 70,
+    width: width * 0.26,
     margin: 10,
     padding: 6,
     borderRadius: 12,
