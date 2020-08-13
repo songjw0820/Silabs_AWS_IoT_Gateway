@@ -1389,8 +1389,8 @@ async deleteGatewayAPI(payload,device)
             <View style={{ width: '80%' }} >
               <TouchableOpacity onPress={() => {this.onViewDevices(item) }}>
                 <View style={{}} color={Constant.WHITE_TEXT_COLOR}>
-                  <Text style={{ fontWeight: 'bold',color:'white' }} >{item.gatewayName}</Text>
-                  <Text style={{color:'white'}} >{item.macAddress}</Text>
+                  <Text style={{ fontWeight: 'bold',color:'white',paddingLeft : '4%' }} >{item.gatewayName}</Text>
+                  <Text style={{color:'white',paddingLeft : '4%'}} >{item.macAddress}</Text>
                 </View>
               </TouchableOpacity>
             </View>

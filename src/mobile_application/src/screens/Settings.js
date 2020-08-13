@@ -369,7 +369,7 @@ class Settings extends Component {
             </View>
          <View style={{width:'60%',flexDirection:'row'}}>
           <TouchableOpacity onPress={() => {this.showModal()}}>
-            <MaterialIcon name="edit" size={24} style={{ padding: (0, 0, 0, 12), color: '#fff',height : width * 0.1,marginLeft: width * 0.09,width : width * 0.1,backgroundColor: Constant.RED_COLOR,borderRadius: 10,marginTop: '8%'}} />
+            <MaterialIcon name="edit" size={width * 0.056} style={{ paddingLeft: '12%',paddingTop: '12%', color: '#fff',height : width * 0.1,marginLeft: width * 0.09,width : width * 0.1,backgroundColor: Constant.RED_COLOR,borderRadius: 10,marginTop: '8%'}} />
           </TouchableOpacity>
             <TouchableOpacity  style={styles.buttonViewWithEdit} onPress ={() => {
                 this.updateNotificationValue (this.state.pButtonValue,'phoneNo')

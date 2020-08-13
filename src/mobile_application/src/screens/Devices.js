@@ -273,7 +273,7 @@ class Devices extends Component {
 
               })
          console.log('Delete Sensor from sensor list');
-        alert("Sensor deleted Successfully. Please do Factory Reset of Gateway");
+        alert("Sensor deleted Successfully. Please do Factory Reset of Sensor");
         this.props.uiStopLoading();
         this._onRefresh();
       }

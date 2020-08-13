@@ -7,6 +7,7 @@ export const WHITE_COLOR= '#f2f2f2'
 export const BLACK_COLOR= '#555555'
 export const BLUE_COLOR= '#3a84d2'
 export const GREY_COLOR = '#737373'
+export const GREY_OUT_RED_COLOR = '#d91f2b80'
 
 
 export const LIGHT_GREY_COLOR = '#ebebeb'

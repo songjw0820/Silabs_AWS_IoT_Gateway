@@ -54,7 +54,7 @@ const new_theme = {
    inputLabel: {
       marginTop: height * 0.01,
       fontSize: RFPercentage(2),
-      color: "#000000",
+      color: Constant.BLACK_COLOR,
     },
    input: {
       margin: height * 0.01,
@@ -89,7 +89,8 @@ const new_theme = {
    	...AmplifyTheme.buttonDisabled,
    	    alignItems: 'center',
         padding: '1%',
-        marginTop: height * 0.03
+        marginTop: height * 0.03,
+        backgroundColor: Constant.GREY_OUT_RED_COLOR,
    	},
 
     sectionHeaderText:
@@ -101,10 +102,13 @@ const new_theme = {
     sectionFooterLink: {
          ...AmplifyTheme.sectionFooterLink,
 		fontSize: RFPercentage(1.8),
+		color: Constant.GREY_OUT_RED_COLOR,
+
 	},
 	sectionFooterLinkDisabled: {
 	        ...AmplifyTheme.sectionFooterLinkDisabled,
     		fontSize: RFPercentage(1.8),
+    		color: Constant.GREY_OUT_RED_COLOR,
     },
 }
 
