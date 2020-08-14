@@ -32,8 +32,8 @@ class HistoricalChart extends Component {
       data: [],
       thresholdValues: {}
     };
-    this.lowalertClickedValue = _.debounce(this.lowalertClickedValue, 10000);
-    this.highalertClickedValue = _.debounce(this.highalertClickedValue, 10000);
+    this.lowalertClickedValue = _.debounce(this.lowalertClickedValue, 2000);
+    this.highalertClickedValue = _.debounce(this.highalertClickedValue, 2000);
   }
 
   componentDidAppear() {
@@ -125,7 +125,7 @@ class HistoricalChart extends Component {
         name: 'DashboardScreen',
         options: {
           topBar: {
-            visible: false
+            visible: true
           }
         }
       }

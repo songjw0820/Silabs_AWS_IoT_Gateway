@@ -589,7 +589,6 @@ class Devices extends Component {
             console.log('this.state.isRegistrationProcessCompleted', this.state.isRegistrationProcessCompleted);
             if (!this.state.isRegistrationProcessCompleted) {
               this.setState({ deviceRegistrationModalVisible: false, isRegistrationProcessCompleted: true, errorCode: 1 })
-              this.callGetUserAPI();
               this.onTimeRegistredDevices = 0;
               this._onRefresh();
               this.disconnectBleConnection();
@@ -940,7 +939,6 @@ class Devices extends Component {
                   payload.sensorId= device.sensorId;
                   payload.gatewayId = this.growAreaId;
                   provisionCallbackResponse = payload;
-
                 }
                 else {
                   alert('Wrong sensorType found.');
@@ -968,6 +966,7 @@ class Devices extends Component {
                                  }).catch((error) => {
                                          console.log('error in saving name', error);
                                   })
+              this.callGetUserAPI();
             }
             validPayload = '';
           }
