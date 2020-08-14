@@ -1759,6 +1759,9 @@ static double formatAndAssignValue (char * property , long value) {
 	double formatValue = 0;
 	if (!strncmp(property, "temperatureValue",strlen(property))){
 		formatValue = (double)value/100;
+		formatValue = (formatValue * 9 / 5) + 32;
+		formatValue = (int)(formatValue * 100 + 0.5); 
+		formatValue = formatValue/100;
 	} else if (!strncmp(property, "humidity",strlen(property))){
 		formatValue = (double)value/100;
 	} else if (!strncmp(property, "batteryVoltage",strlen(property))){

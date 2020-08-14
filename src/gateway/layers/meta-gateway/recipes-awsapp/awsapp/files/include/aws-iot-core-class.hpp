@@ -29,7 +29,7 @@
 
 //#define CREATE_THING_ENDPOINT "http://localhost:8090/post"
 //#define CREATE_THING_ENDPOINT "http://localhost:8090/postsensors"
-#define CREATE_THING_ENDPOINT "https://bym6ctlh6e.execute-api.us-east-2.amazonaws.com/dev/creatething"
+#define CREATE_THING_ENDPOINT "https://r1dlsp36ul.execute-api.us-east-1.amazonaws.com/dev/creatething"
 
 #define AMAZON_ROOT_CA_ENDPOINT "https://www.amazontrust.com/repository/AmazonRootCA1.pem"
 
