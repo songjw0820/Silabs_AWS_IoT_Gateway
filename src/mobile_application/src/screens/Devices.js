@@ -1214,7 +1214,13 @@ scanAndConnectForDeleteSensor = (inBackground,payload,sensorId,eui64) => {
                     })
                 }
                this.setState({modalVisible:false, deviceDiscoveryModalVisible : false,waitingDeviceLoader: false});
-               this.tryDeviceConnectionForDeletion(device,inBackground,sensorId,eui64);
+               this.tryDeviceConnectionForDeletion(payload,device,inBackground,sensorId,eui64);
+            }
+            else
+            {
+                this.props.uiStopLoading();
+                this.props.bleManager.stopDeviceScan();
+                alert('Mac Address of Gateway is mismatched');
             }
          }
          else
@@ -1230,7 +1236,7 @@ scanAndConnectForDeleteSensor = (inBackground,payload,sensorId,eui64) => {
               })
             }
               this.setState({modalVisible:false, deviceDiscoveryModalVisible : false,waitingDeviceLoader: false});
-              this.tryDeviceConnectionForDeletion(device,inBackground,sensorId,eui64);
+              this.tryDeviceConnectionForDeletion(payload,device,inBackground,sensorId,eui64);
           }
         }
       });
@@ -1242,7 +1248,7 @@ scanAndConnectForDeleteSensor = (inBackground,payload,sensorId,eui64) => {
       this.scanAndConnectForDeleteSensor(inBackground,payload,sensorId,eui64);
     }
   }
-  tryDeviceConnectionForDeletion = (device, inBackground,sensorId,eui64) => {
+  tryDeviceConnectionForDeletion = (payload,device, inBackground,sensorId,eui64) => {
 
             device.connect()
               .then((device) => {
@@ -1272,7 +1278,7 @@ scanAndConnectForDeleteSensor = (inBackground,payload,sensorId,eui64) => {
                     this.props.manager.destroy();
                   }
                   this.props.onSetBleManager(new BleManager());
-                  this.tryDeviceConnectionForDeletion(device, inBackground);
+                  this.tryDeviceConnectionForDeletion(payload,device, inBackground,sensorId,eui64);
                 }
                 else {
                   console.log("Error:" + error.message)
