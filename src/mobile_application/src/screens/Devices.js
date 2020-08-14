@@ -54,6 +54,7 @@ class Devices extends Component {
   discoonecFromCancel = false;
   GatewayMacID = null;
   timeOutValue = null;
+  timeOutValueProvision = null;
   bleDevice=null;
   isVisible = false;
 
@@ -75,6 +76,7 @@ class Devices extends Component {
         showCancelButton: false,
         waitingDeviceLoader: false,
         sensors: [],
+        gateways: [],
         email:'',
         chartflag: false,
         gatewayforSensor:'',
@@ -108,6 +110,10 @@ class Devices extends Component {
 
          let growAreaId = this.growAreaId;
          })
+         AsyncStorage.getItem('listGateway').then(response => {
+               let gateways = JSON.parse(response);
+               this.setState({gateways:gateways});
+         });
        }
 
     getSensorList(){
@@ -246,6 +252,7 @@ class Devices extends Component {
             {
              const msg = await response.json();
              console.log("response in json---"+msg);
+             alert("Sensor deleted Successfully.");
              this.setSensorListAfterDeletion(sensorId);
               this.askForService(device,eui64);
             }
@@ -273,7 +280,6 @@ class Devices extends Component {
 
               })
          console.log('Delete Sensor from sensor list');
-        alert("Sensor deleted Successfully. Please do Factory Reset of Sensor");
         this.props.uiStopLoading();
         this._onRefresh();
       }
@@ -532,6 +538,7 @@ class Devices extends Component {
                           const msg = await response.json();
                           console.log("response in json---"+msg);
                           this.props.uiStopLoading();
+                          alert("Sensor deleted Successfully. Please do Factory Reset of Sensor");
                           this.setSensorListAfterDeletion(sensorId);
                           this._onRefresh();
                         }
@@ -1012,14 +1019,19 @@ class Devices extends Component {
       if (!inBackground) {
         this.setState({
           waitingDeviceLoader: true,
-          bleMessage: 'Searching for ' + (this.growAreaName ? "'" + this.growAreaName + "'" : 'gateway.')
+          bleMessage: 'Searching for Available Gateway Over BLE'
         })
       }
 
       console.log("Started device scan...");
+       this.timeOutValueProvision = setTimeout(() => {
+                     this.setState({ deviceDiscoveryModalVisible: false, waitingDeviceLoader: false });
+                     alert('Gateway is not available over BLE. Please try again');
+        }, 20000)
       this.props.bleManager.startDeviceScan(null, null, (error, device) => {
 
         if (error) {
+          clearTimeout(this.timeOutValueProvision);
           console.log('ErrorCode:' + error.errorCode);
           this.setState({ modalVisible: false });
           if (error.errorCode === 101) {
@@ -1079,13 +1091,10 @@ class Devices extends Component {
           this.connectedBle = device;
           console.log("Gateway Name:" + device.name + "\nDeviceId:" + device.id);
           console.log(this.growAreaUId + "=" + device.id + "=");
-          console.log('this.macId',this.props.selectedGrowArea.macId);
-          console.log('this condition', device.name.indexOf(this.props.selectedGrowArea.macId) !== -1);
 
-
-
-          if (device.name.indexOf(this.props.selectedGrowArea.macId) !== -1 || bleDebug) {
+     //     if (device.name.indexOf(this.props.selectedGrowArea.macId) !== -1 || bleDebug) {
             if (bleDebug) this.growAreaUId = device.id;
+            clearTimeout(this.timeOutValueProvision);
             this.props.bleManager.stopDeviceScan();
             this.props.onSignoutDisconnect(device)
             console.log("Connecting to Gateway");
@@ -1098,7 +1107,7 @@ class Devices extends Component {
               })
             }
             this.tryDeviceConnection(device, inBackground);
-          }
+         // }
         }
       });
     }
@@ -1126,6 +1135,7 @@ scanAndConnectForDeleteSensor = (inBackground,payload,sensorId,eui64) => {
 
         if (error) {
             this.props.uiStopLoading();
+            clearTimeout(this.timeOutValue);
           console.log('ErrorCode:' + error.errorCode);
           this.setState({ modalVisible: false,deviceDiscoveryModalVisible:false });
           if (error.errorCode === 101) {
@@ -1897,7 +1907,10 @@ async updateSensorName (value,device)
         {detailBlock}
                <View style={styles.listContainer}>
                 <View style={{width:'100%' ,flexDirection:'row',alignItems:'flex-end',alignContent:'flex-end',alignSelf:'flex-end',justifyContent:'flex-end'}}>
+
                     <TouchableOpacity style={[styles.roundButton, { backgroundColor: Constant.RED_COLOR }]} onPress={() => {
+                    if(this.state.gateways.length !== 0)
+                    {
                         this.showDeviceDiscoveryModal(true, false, true, false)
                     if (this.provisionCallbackCharSubscription) {
                         console.log('keepprovision callback');
@@ -1912,6 +1925,11 @@ async updateSensorName (value,device)
                        callbackRegistredDevices: 0
                        , showCancelButton: true, errorCode: 0
                     })
+                    }
+                    else
+                    {
+                       alert("Gateway has not been Provisioned. Please provisioned it");
+                    }
                     }}>
                     <Text style={styles.buttonText}>Add New</Text>
 
