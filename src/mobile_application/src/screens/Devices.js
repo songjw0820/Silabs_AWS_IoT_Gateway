@@ -666,6 +666,8 @@ class Devices extends Component {
     }
     else {
       console.log("GrowAreaUID not found.")
+      console.log("Scanning for gateway..")
+      this.scanAndConnect(inBackground);
     }
   }
 
@@ -1098,6 +1100,7 @@ class Devices extends Component {
             this.props.onSignoutDisconnect(device)
             console.log("Connecting to Gateway");
             this.GatewayMacID = device.id;
+            if(!this.growAreaId) this.growAreaId = "gateway-"+device.id;
             this.bleDevice=device;
             if (!inBackground) {
               this.setState({
