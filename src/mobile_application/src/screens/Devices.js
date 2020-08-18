@@ -1597,7 +1597,7 @@ async updateSensorName (value,device)
           return (
             <View style={styles.listItem}>
                  <View style = {{flexDirection: 'row'}}>
-                    <View style={{ flexDirection: 'column', color: '#fff', width: '60%'}}>
+                    <View style={{ flexDirection: 'column', color: '#fff', width: '58%'}}>
                         <Text style={{ alignSelf: 'flex-start', color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{debug ? info.item.eui64 + '-' : ''}{info.item.device_name}</Text>
                         <Text style={{ alignSelf: 'flex-start', color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{debug ? info.item.eui64 + '-' : ''}{info.item.device_type}</Text>
                         <Text style={{ color: '#fff', fontSize: 17  }}>{debug ? info.item.id + '-' : ''}{info.item.eui64}</Text>
@@ -1609,7 +1609,7 @@ async updateSensorName (value,device)
                         this.showRenameModal();
                     }} />
 
-                   <MaterialIcon name="delete" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff',marginLeft: '10%',backgroundColor: Constant.BLUE_COLOR }} onPress={() =>
+                   <MaterialIcon name="delete" size={24} style={{ padding: (0, 0, 0, 10), color: '#fff',marginLeft: '7%',backgroundColor: Constant.BLUE_COLOR }} onPress={() =>
                    Alert.alert('Delete Sensor', 'Are you sure you want to delete ' + info.item.device_name + '?',
                     [
                     {

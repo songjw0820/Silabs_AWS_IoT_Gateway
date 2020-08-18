@@ -30,8 +30,6 @@ class Settings extends Component {
     this.eventSubscription = Navigation.events().registerNavigationButtonPressedListener(this.MenuIconPrressed);
     this.state = {
         token: '',
-        eButtonValue: '',
-        pButtonValue: '',
         pressedButton: '',
         sideMenuVisible: false,
         gateways: [],
@@ -40,23 +38,15 @@ class Settings extends Component {
   }
 
   componentDidAppear() {
-        AsyncStorage.multiGet(['accessToken','email','number','listGateway']).then(response => {
-
+        AsyncStorage.multiGet(['accessToken','email','number','listGateway','emailNotify','SmsNotify']).then(response => {
           let token = response[0][1];
           let email = JSON.parse(response[1][1]);
           let number =JSON.parse(response[2][1]);
           let gateways = JSON.parse(response[3][1]);
-          if(gateways.length !== 0)
-          {
-            this.setState({eButtonValue: gateways[0].sendEmailNotifications === true ? 'ON' : 'OFF'});
-            this.setState({pButtonValue: gateways[0].sendSmsNotifications === true ? 'ON' : 'OFF'});
-          }
-          else
-          {
-                this.setState({eButtonValue: 'OFF'});
-                this.setState({pButtonValue: 'OFF'});
-          }
-          this.setState({ token,email,number,gateways}, () => {
+          let emailNotify = JSON.parse(response[4][1]);
+          let SmsNotify = JSON.parse(response[5][1]);
+
+          this.setState({ token,email,number,gateways,emailNotify,SmsNotify}, () => {
           });
         }).catch((e) => {
           console.log('error in getting asyncStorage\'s item:', e.message);
@@ -211,14 +201,14 @@ class Settings extends Component {
 
       if (notifyString === 'email')
       {
-        updatedEmailNotifyValue = this.state.eButtonValue === 'ON' ? false : true;
-        updatedNumberNotifyValue = this.state.pButtonValue === 'OFF' ? false : true;
+        updatedEmailNotifyValue = this.state.emailNotify === 'ON' ? false : true;
+        updatedNumberNotifyValue = this.state.SmsNotify === 'OFF' ? false : true;
 
       }
       else
       {
-        updatedEmailNotifyValue = this.state.eButtonValue === 'OFF' ? false : true;
-        updatedNumberNotifyValue = this.state.pButtonValue === 'ON' ? false : true;
+        updatedEmailNotifyValue = this.state.emailNotify === 'OFF' ? false : true;
+        updatedNumberNotifyValue = this.state.SmsNotify === 'ON' ? false : true;
       }
 
       let payload = [{"gatewayId":gatewayId,"gatewayName":gatewayName,"deviceType":Constant.GATEWAY_TYPE, "sendEmailNotifications": updatedEmailNotifyValue ,"sendSmsNotifications":updatedNumberNotifyValue}]
@@ -250,8 +240,10 @@ class Settings extends Component {
 
            this.props.uiStartLoading("Updating State for Notification....");
 
-           if(notifyString === 'email') this.state.eButtonValue === 'ON' ? this.setState({eButtonValue:'OFF'}) : this.setState({eButtonValue:'ON'});
-           else this.state.pButtonValue === 'ON' ? this.setState({pButtonValue:'OFF'}) : this.setState({pButtonValue:'ON'});
+           if(notifyString === 'email') this.state.emailNotify === 'ON' ? this.setState({emailNotify:'OFF'}) : this.setState({emailNotify:'ON'});
+           else this.state.SmsNotify === 'ON' ? this.setState({SmsNotify:'OFF'}) : this.setState({SmsNotify:'ON'});
+           AsyncStorage.setItem('emailNotify',JSON.stringify(this.state.emailNotify));
+           AsyncStorage.setItem('SmsNotify',JSON.stringify(this.state.SmsNotify));
            this.props.uiStopLoading();
 
 
@@ -305,9 +297,9 @@ class Settings extends Component {
       {
           emailView = ( <View>
                             <TouchableOpacity style={styles.buttonView} onPress ={() => {
-                                this.updateNotificationValue (this.state.eButtonValue,'email')
+                                this.updateNotificationValue (this.state.emailNotify,'email')
                             }}>
-                            <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.eButtonValue}</Text>
+                            <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.emailNotify}</Text>
                              </TouchableOpacity>
                         </View>
                       );
@@ -317,9 +309,9 @@ class Settings extends Component {
                         <MaterialIcon name="edit" size={width * 0.056} style={{ paddingLeft: '12%',paddingTop: '12%', color: '#fff',height : width * 0.1,marginLeft: width * 0.09,width : width * 0.1,backgroundColor: Constant.RED_COLOR,borderRadius: 10,marginTop: '8%'}} />
                       </TouchableOpacity>
                         <TouchableOpacity  style={styles.buttonViewWithEdit} onPress ={() => {
-                            this.updateNotificationValue (this.state.pButtonValue,'phoneNo')
+                            this.updateNotificationValue (this.state.SmsNotify,'phoneNo')
                         }}>
-                             <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.pButtonValue}</Text>
+                             <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.SmsNotify}</Text>
                         </TouchableOpacity>
                      </View>
 
@@ -329,7 +321,7 @@ class Settings extends Component {
       {
            emailView = (
             <View style = {styles.buttonView}>
-                 <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.eButtonValue}</Text>
+                 <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.emailNotify}</Text>
              </View>
            );
            smsView = (
@@ -338,7 +330,7 @@ class Settings extends Component {
                          <MaterialIcon name="edit" size={width * 0.056} style={{ paddingLeft: '12%',paddingTop: '12%', color: '#fff',height : width * 0.1,marginLeft: width * 0.09,width : width * 0.1,backgroundColor: Constant.RED_COLOR,borderRadius: 10,marginTop: '8%'}} />
                        </TouchableOpacity>
                        <View style={styles.buttonViewWithEdit}>
-                        <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.pButtonValue}</Text>
+                        <Text style={[styles.emailText,{textAlign: 'center',marginTop: '12%'}]}>{this.state.SmsNotify}</Text>
                        </View>
                       </View>
 

@@ -135,10 +135,15 @@ async componentDidMount() {
             console.log("response in json---"+JSON.stringify(result));
             AsyncStorage.setItem('listGateway',JSON.stringify(result['gateways']));
             AsyncStorage.setItem('sensorList',JSON.stringify(result['sensors']));
-           if(gatewaylist.length !== 0)
+           if(result['gateways'].length !== 0)
            {
-                AsyncStorage.setItem('emailNotify',JSON.stringify(result['gateways'][0].sendEmailNotifications));
-                AsyncStorage.setItem('SmsNotify',JSON.stringify(result['gateways'][0].sendSmsNotifications));
+                AsyncStorage.setItem('emailNotify',JSON.stringify(JSON.parse(result['gateways'][0].sendEmailNotifications) === true ? 'ON' : 'OFF'));
+                AsyncStorage.setItem('SmsNotify',JSON.stringify(JSON.parse(result['gateways'][0].sendSmsNotifications) === true ? 'ON' : 'OFF'));
+           }
+           else
+           {
+                AsyncStorage.setItem('emailNotify',JSON.stringify('OFF'));
+                AsyncStorage.setItem('SmsNotify',JSON.stringify('OFF'));
            }
           }
         else
