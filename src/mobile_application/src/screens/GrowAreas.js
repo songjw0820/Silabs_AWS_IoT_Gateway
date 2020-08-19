@@ -82,13 +82,16 @@ class GrowAreas extends Component {
     this.visible = true;
     this.forceUpdate();
 
-    AsyncStorage.multiGet(['accessToken', 'APPLE_LOGGED_IN', 'userEmail','email','sensorList']).then(response => {
+    AsyncStorage.multiGet(['accessToken', 'APPLE_LOGGED_IN', 'userEmail','email','sensorList','emailNotify','SmsNotify']).then(response => {
       let token = response[0][1];
       let appleKey = response[1][1];
       let currentUser = response[2][1];
       let email = response[3][1];
       let sensors = JSON.parse(response[4][1]);
-      this.setState({ token, appleKey, currentUser,email,sensors}, () => {
+      let emailState = JSON.parse(response[5][1]);
+      let smsState = JSON.parse(response[6][1]);
+
+      this.setState({ token, appleKey, currentUser,email,sensors,emailState,smsState}, () => {
 
        
       });
@@ -131,6 +134,7 @@ class GrowAreas extends Component {
       let token = response[0][1];
       let appleKey = response[1][1];
       let email=response[3][1];
+
       console.log("finally email----"+email);
       this.setState({ email: email});
       if (this.search) this.search.clear();
@@ -1061,8 +1065,8 @@ async deleteGatewayAPI(payload,device)
                     }).catch((error) => {
                             console.log('error in saving name', error);
                         })
-                AsyncStorage.setItem('emailNotify',true);
-                AsyncStorage.setItem('SmsNotify',false);
+                AsyncStorage.setItem('emailNotify',"true");
+                AsyncStorage.setItem('SmsNotify',"false");
                 alert(payload['statusMessage']);
                 this.disconnectBleConnection();
               }else
@@ -1316,9 +1320,11 @@ async deleteGatewayAPI(payload,device)
 
 
        this.props.uiStartLoading("Updating Gateway Name....");
+
        let url = Urls.RENAME_GATEWAY_SENSOR;
-       let emailState = AsyncStorage.getItem('emailNotify');
-       let smsState = AsyncStorage.getItem('SmsNotify');
+       let emailState = this.state.emailState === 'ON' ? true : false;
+       let smsState = this.state.smsState === 'ON' ? true : false;
+
        let payload = [{"gatewayName":value,"deviceType":Constant.GATEWAY_TYPE, "gatewayId":device.gatewayId,'sendEmailNotifications': emailState,'sendSmsNotifications' : smsState}]
 
        console.log("payload for Sensor delete ---:"+JSON.stringify(payload));
