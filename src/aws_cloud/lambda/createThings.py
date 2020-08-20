@@ -4,7 +4,7 @@ import json
 from boto3.dynamodb.conditions import Key
 
 GATEWAY_TYPE = "gateway"
-SENSOR_TYPE = "sensor"
+SENSOR_TYPE = "sentimate"
 
 isGatewayPolicy = False
 policyName = "gateway-policy"
@@ -12,13 +12,13 @@ policyName = "gateway-policy"
 iot = boto3.client('iot')
 response = {}
 
-def FindGatewayByGatewayId(gateway_id):
-    print(type(gateway_id))
+def FindGatewayByGatewayId(gatewayId):
+    print(type(gatewayId))
     dynamodb_table=getClient()
-    table = dynamodb_table.Table('gateways')
+    table = dynamodb_table.Table('devices')
     response = table.get_item(
     Key={
-        'gateway_id': gateway_id
+        'gatewayId': gatewayId
         }
     )
     return response
@@ -39,7 +39,7 @@ def addToDB(payload, deviceType):
         print(type(payload))
         try:
             dynamodb_table=getClient()
-            table = dynamodb_table.Table('gateways')
+            table = dynamodb_table.Table('devices')
             response=table.put_item(
                     Item=payload
                     )
@@ -57,12 +57,12 @@ def addToDB(payload, deviceType):
             
     elif (deviceType == SENSOR_TYPE):
         dynamodb_table=getClient()
-        table = dynamodb_table.Table('gateways')
+        table = dynamodb_table.Table('devices')
         try:
-            gateway_id=payload['gateway_id']
-            print("Gateway id :"+gateway_id)
-            payload.pop('gateway_id')
-            gateway_response=FindGatewayByGatewayId(gateway_id)
+            gatewayId=payload['gatewayId']
+            print("Gateway id :"+gatewayId)
+            payload.pop('gatewayId')
+            gateway_response=FindGatewayByGatewayId(gatewayId)
             print(gateway_response)
             if 'Item' in gateway_response:
                 gateway=gateway_response['Item']
@@ -70,7 +70,7 @@ def addToDB(payload, deviceType):
                 sensors.append(payload)
                 response = table.update_item(
                     Key={
-                        'gateway_id': gateway_id
+                        'gatewayId': gatewayId
                     },
                     UpdateExpression="set #s = :r",
                     ExpressionAttributeNames={
@@ -99,7 +99,10 @@ def createDevice(payload):
         if(data["deviceType"] == GATEWAY_TYPE):
             print("Device type is: {}".format(GATEWAY_TYPE))
             macAddress = data["macAddress"]
-            groupName = "group-"+GATEWAY_TYPE+"-"+macAddress
+            gatewayName = data["gatewayName"]
+            description = data["description"]
+            #groupName = "group-"+GATEWAY_TYPE+"-"+macAddress
+            groupName = GATEWAY_TYPE+"-"+macAddress
             print("Creating group.....\nGroup name: {}".format(groupName))
             try:
                 r = iot.create_thing_group(thingGroupName=groupName)
@@ -109,7 +112,9 @@ def createDevice(payload):
                 if error.response['Error']['Code']  == 'ResourceAlreadyExistsException':
                     print(error.response['Error']['Code'])
                     print('Thing Group already exists')
-                    return
+                    response['error'] = "Thing Group already exists"
+                    return response
+                    
             groupArn = r['thingGroupArn']
             print("Group ARN: {}".format(groupArn))
             print("Attaching policy with the group: {}".format(groupArn))
@@ -119,6 +124,8 @@ def createDevice(payload):
             except botocore.exceptions.ClientError as error:
                 print("Error attaching the policy: {0} to the group: {1}".format(policyName, groupName))
                 print(error.response['Error']['Code'])
+                response['error'] = "Error attaching policy"
+                return response
 
             thingName = data["deviceType"] + "-" + data["macAddress"]
 
@@ -127,9 +134,12 @@ def createDevice(payload):
                 r = iot.create_thing(thingName=thingName, thingTypeName=GATEWAY_TYPE)
                 print("Thing: {} created successfully!".format(thingName))
                 response["thing"] = r
+                response["thing"]["gatewayName"] = gatewayName
             except botocore.exceptions.ClientError as error:
                 print("Error creating the thing: {}".format(thingName))
                 print(error.response['Error']['Code'])
+                response['error'] = "Error creating thing.."
+                return response
         
             print("Attaching the thing with the group: {}".format(groupName))
 
@@ -139,6 +149,8 @@ def createDevice(payload):
             except botocore.exceptions.ClientError as error:
                 print("Error adding the thing: {} to the group: {}".format(thingName, groupName))
                 print(error.response['Error']['Code'])
+                response['error'] = "Error attaching thing to group"
+                return response
 
             print("Creating certificates....")
 
@@ -150,7 +162,8 @@ def createDevice(payload):
             except botocore.exceptions.ClientError as error:
                 print("Error creating certificates.")
                 print(error.response['Error']['Code'])
-                return            
+                response['error'] = "Error creating certificates"
+                return response   
 
             print("Attaching policy with the certificate...")
 
@@ -160,7 +173,8 @@ def createDevice(payload):
             except botocore.exceptions.ClientError as error:
                 print("Error attaching the policy to certificates.")
                 print(error.response['Error']['Code'])
-                return
+                response['error'] = "Error attaching policy to certificates"
+                return response
 
             print("Attaching the created certificates with the thing: {}".format(thingName))
 
@@ -170,7 +184,8 @@ def createDevice(payload):
             except botocore.exceptions.ClientError as error:
                 print("Error attaching certificates to the thing: {}".format(thingName))
                 print(error.response['Error']['Code'])
-                return
+                response['error'] = "Error attaching things to certificates..."
+                return response
             
             print("Getting endpoint details....")
 
@@ -180,49 +195,85 @@ def createDevice(payload):
             except botocore.exceptions.ClientError as error:
                 print("Error attaching the policy to certificates.")
                 print(error.response['Error']['Code'])
-                return
+                response['error'] = "Error getting endpoint..."
+                return response
             
             dbData = {}
-            dbData["user_id"] = data["userId"] 
-            dbData["gateway_id"] = groupName
-            dbData["mac_id"] = data["macAddress"]
-            dbData["gateway_name"] = groupName
+            dbData["userId"] = data["userId"] 
+            dbData["gatewayId"] = GATEWAY_TYPE+"-"+macAddress
+            dbData["gatewayName"] = gatewayName
+            dbData["description"] = description
+            dbData["macAddress"] = data["macAddress"]
             dbData["sensors"] = []
+            dbData["sendEmailNotifications"] = True
+            dbData["sendSmsNotifications"] = False
             
             r = addToDB(dbData, GATEWAY_TYPE)
             response["db"] = r
             
+            
+            # Creating SNS Subscription
+            snsClient = boto3.client('sns')
+            
+            subscribeResponse = snsClient.subscribe(
+                TopicArn='arn:aws:sns:us-east-1:454143665149:EFR32_RuleNotifications',
+                Protocol='email',
+                Endpoint=data["userId"],
+                ReturnSubscriptionArn=True
+            )
+            
+            setAttributeResponse = snsClient.set_subscription_attributes(
+                SubscriptionArn=subscribeResponse['SubscriptionArn'],
+                AttributeName='FilterPolicy',
+                AttributeValue='{"userId": ["' + data["userId"] +'"]}'
+            )
+            
+            
         elif(data["deviceType"] == SENSOR_TYPE):
             print("Device type is: {}".format(SENSOR_TYPE))
-            macAddress = data["macAddress"]
-            groupName = data["groupName"]
+            eui64 = data["eui64"]
+            gatewayId = data["gatewayId"]
             
-            thingName = data["deviceType"] + "-" + data["macAddress"]
+            thingName = "sensor" + "-" + data["eui64"]
 
             print("Creating thing: {}".format(thingName))
             try:
                 r = iot.create_thing(thingName=thingName, thingTypeName=SENSOR_TYPE)
                 print("Thing: {} created successfully!".format(thingName))
-                r["macAddress"] = macAddress
+                r["eui64"] = eui64
+                r["sensorName"] = data["sensorName"]
                 response["thing"].append(r)
             except botocore.exceptions.ClientError as error:
                 print("Error creating the thing: {}".format(thingName))
                 print(error.response['Error']['Code'])
+                response['error'] = "Error creating sensor thing"
+                return response
         
-            print("Attaching the thing with the group: {}".format(groupName))
+            print("Attaching the thing with the group: {}".format(gatewayId))
 
             try:
-                r = iot.add_thing_to_thing_group(thingName=thingName, thingGroupName=groupName)
-                print("Successfully attached the thing: {0} with the group: {1}".format(thingName, groupName))
+                r = iot.add_thing_to_thing_group(thingName=thingName, thingGroupName=gatewayId)
+                print("Successfully attached the thing: {0} with the group: {1}".format(thingName, gatewayId))
             except botocore.exceptions.ClientError as error:
-                print("Error adding the thing: {} to the group: {}".format(thingName, groupName))
+                print("Error adding the thing: {} to the group: {}".format(thingName, gatewayId))
                 print(error.response['Error']['Code'])
+                response['error'] = "Error adding sensor thing to group"
+                return response
             
             dbData = {}
-            dbData["gateway_id"] = groupName
-            dbData["mac_id"] = macAddress
-            dbData["name"] = thingName
-            dbData["sensor_id"] = macAddress
+            dbData["gatewayId"] = gatewayId
+            dbData["eui64"] = eui64
+            dbData["sensorName"] = data["sensorName"]
+            dbData["sensorId"] = "sensor" + "-" + eui64
+            dbData["description"] = data["description"]
+            dbData["thresholdValues"] = {
+                    "highTemp": 105,
+                    "lowTemp": 55,
+                    "highHumidity": 80,
+                    "lowHumidity": 40,
+                    "highCO2": 7000,
+                    "lowCO2": 1500
+            }
             
             r = addToDB(dbData, SENSOR_TYPE)
             response["db"] = r
@@ -301,7 +352,13 @@ def lambda_handler(event, context):
     global response
     response = {}
     r = createDevice(body)
-    return {
-        'statusCode': 200,
-        'body': json.dumps(r)
-    }
+    if 'error' in r:
+        return {
+            'statusCode': 500,
+            'body': json.dumps(r)
+        }
+    else:
+        return {
+            'statusCode': 200,
+            'body': json.dumps(r)
+        }

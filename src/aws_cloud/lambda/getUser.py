@@ -2,7 +2,15 @@ import boto3
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
 import json
+import decimal
 
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return float(o)
+        return super(DecimalEncoder, self).default(o)
+        
+        
 def lambda_handler(event, context):
     
     userId=event['pathParameters']['userId']
@@ -16,11 +24,11 @@ def lambda_handler(event, context):
         response = table.scan(
             FilterExpression=Key("userId").eq(userId)
          )
-        print(response);
+        #print(response);
         if response['ResponseMetadata']['HTTPStatusCode']==200:
             output=createResponseObject(response['Items'])
             outputObj['statusCode']=200
-            outputObj['body']=json.dumps(output)
+            outputObj['body']=json.dumps(output, cls=DecimalEncoder)
             return outputObj
     except ClientError as error:
         outputObj['statusCode']=500
@@ -45,6 +53,7 @@ def createResponseObject(result):
                 sensorobj['eui64']=sensor['eui64']
                 sensorobj['sensorId']=sensor['sensorId']
                 sensorobj['gatewayId']=item['gatewayId']
+                sensorobj['thresholdValues'] = sensor['thresholdValues']
                 sensorsList.append(sensorobj)
     obj['gateways']=gatewayList
     obj['sensors']=sensorsList
