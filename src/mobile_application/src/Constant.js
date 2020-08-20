@@ -102,6 +102,8 @@ export const CO2 = 'CO2';
 export const HUMIDITY = 'humidity';
 export const PIR = 'PIR';
 
+export const INITIAL_MSG = 'No live data available';
+
 
 export const rootStack = {
   0: 'FACILITY',
