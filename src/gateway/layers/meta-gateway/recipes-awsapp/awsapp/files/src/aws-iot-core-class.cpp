@@ -109,6 +109,7 @@ int AWSIoTCore::ParseCreateGatewayResponse(std::string payload)
 #endif
 	LOG_INFO("Parsing response.....");
 	this->UpdateConfigFile("thingName", data["thing"]["thingName"].GetString());
+	this->UpdateConfigFile("gatewayName", data["thing"]["gatewayName"].GetString());
 	//this->UpdateConfigFile("certificateArn", data["certificates"]["certificateArn"].GetString());
 	this->UpdateConfigFile("groupArn", data["group"]["thingGroupArn"].GetString());
 	this->UpdateConfigFile("groupName", data["group"]["thingGroupName"].GetString());
@@ -208,6 +209,16 @@ rapidjson::Document AWSIoTCore::ParseCreateSensorResponse(std::string payload)
 #ifdef DEBUG
 		this->print(device);
 #endif
+		for(rapidjson::Value::ConstValueIterator itr = data["endDevices"].Begin(); itr != data["endDevices"].End(); ++itr)
+                {
+                        if((*itr)["eui64"] == device["eui64"])
+                        {
+                                LOG_INFO("Removing existing sensor details from config file.....");
+                                data["endDevices"].Erase(itr);
+                                break;
+                        }
+                }
+		LOG_INFO("Adding updated details...");
 		data["endDevices"].PushBack(device, data.GetAllocator());
 #ifdef DEBUG
 		this->print(retDevice);

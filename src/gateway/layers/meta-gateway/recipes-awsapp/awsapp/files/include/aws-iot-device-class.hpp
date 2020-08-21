@@ -1,5 +1,7 @@
+#ifndef AWS_IOT_DEVICE_CLASS_H
+#define AWS_IOT_DEVICE_CLASS_H
+
 #include "mqtt/Client.hpp"
-//#include "Client.hpp"
 #include "NetworkConnection.hpp"
 #include "common/ConfigCommon.hpp"
 #ifdef USE_WEBSOCKETS
@@ -24,7 +26,7 @@
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
-
+#include "aws-iot-core-class.hpp"
 
 
 #include <chrono>
@@ -50,10 +52,15 @@ class AWSIoTDevice
 		awsiotsdk::ResponseCode DisconnectCallback(awsiotsdk::util::String client_id,
                                                 std::shared_ptr<awsiotsdk::DisconnectCallbackContextData> p_app_handler_data);
 		int Publish(const char * topic, const char * payload);
+		int Subscribe(awsiotsdk::util::String topicName);
+                awsiotsdk::ResponseCode SubscribeCallback(awsiotsdk::util::String topic_name,
+                                awsiotsdk::util::String payload,
+                                std::shared_ptr<awsiotsdk::mqtt::SubscriptionHandlerContextData> p_app_handler_data);
 		~AWSIoTDevice();
 	private:
 		std::shared_ptr<awsiotsdk::network::OpenSSLConnection> p_network_connection;
 		std::shared_ptr<awsiotsdk::MqttClient> p_iot_client_;
 		rapidjson::Document document;
+		AWSIoTCore core;
 };
-
+#endif // #ifndef AWS_IOT_DEVICE_CLASS_H

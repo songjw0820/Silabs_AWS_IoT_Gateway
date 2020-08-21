@@ -2,6 +2,7 @@
     "provisioned": "",
     "groupArn": "",
     "groupName": "",
+    "gatewayName": "",
     "gatewayId": "",
     "certificatePath": "",
     "privateKeyPath": "",

@@ -1,3 +1,5 @@
+#ifndef AWS_IOT_CORE_CLASS_H
+#define AWS_IOT_CORE_CLASS_H
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -22,6 +24,9 @@
 #define DEVICE_TYPE_SENTIMATE      "sentimate"
 #define PATH_TO_CERTS      "/opt/awsapp/certs/"
 #define CONFIG_FILE        "/opt/awsapp/config.json"
+
+#define AWS_SUB_TOPIC	"gateway/update"
+#define SKIP_PEER_VERIFICATION
 
 // Define DEBUG macro to enable debug logs.
 // To enable DEBUG logs, uncomment the next line
@@ -52,4 +57,4 @@ class AWSIoTCore
 	private:
 		rapidjson::Document document;
 };
-
+#endif // #ifndef AWS_IOT_CORE_CLASS_H
