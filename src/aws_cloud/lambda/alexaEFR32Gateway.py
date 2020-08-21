@@ -99,14 +99,14 @@ def getAttributeFromDb(userEmail, sensorName, temperature=False, humidity=False,
     for item in resp['Items']:
             print(item)
             for sensor in item['sensors']:
-                if sensor['sensorName'] == sensorName:
+                if sensor['sensorName'].lower() == sensorName:
                     sensorId = sensor['sensorId']
                     break
     
     if sensorId == '':
-        r['statusCode'] = 500
+        r['statusCode'] = 501
         print("Did not find sensorName: {0} with the userId: {1}".format(sensorName, userId))
-        r['message'] = 'GatewayNotFoundUnderUser'
+        r['message'] = 'SensorNotFoundUnderUser'
         return r
     print('Found sensorId: {}'.format(sensorId))
     
@@ -236,6 +236,11 @@ def getCO2Details(intent, session, context):
                                 "Make sure you register a gateway from the EFR32 IoT Gateway Mobile Application".format(sessionAttributes['name'])
                                 
                 reprompt_text = "Are you sure you have a gateway registered? I couldn't find the details"
+            elif (r['statusCode'] == 501):
+                speech_output = "Sorry {0}, I couldn't find any sensor with that name associated with your account. " \
+                                "Make sure you register a sensor with the name: {1} from the EFR32 IoT Gateway Mobile Application".format(sessionAttributes['name'], sensorName)
+                                
+                reprompt_text = "Are you sure you have a sensor with that name registered? I couldn't find the details"
             else:
                 speech_output = "Sorry {0}, I don't have data of your {1} for the past 2 mins. " \
                                 "Please try again after sometime".format(sessionAttributes['name'], sensorName)
@@ -277,6 +282,11 @@ def getHumidityDetails(intent, session, context):
                                 "Make sure you register a gateway from the EFR32 IoT Gateway Mobile Application".format(sessionAttributes['name'])
                                 
                 reprompt_text = "Are you sure you have a gateway registered? I couldn't find the details"
+            elif (r['statusCode'] == 501):
+                speech_output = "Sorry {0}, I couldn't find any sensor with that name associated with your account. " \
+                                "Make sure you register a sensor with the name: {1} from the EFR32 IoT Gateway Mobile Application".format(sessionAttributes['name'], sensorName)
+                                
+                reprompt_text = "Are you sure you have a sensor with that name registered? I couldn't find the details"
             else:
                 speech_output = "Sorry {0}, I don't have data of your {1} for the past 2 mins. " \
                                 "Please try again after sometime".format(sessionAttributes['name'], sensorName)
@@ -319,6 +329,11 @@ def getTemperatureDetails(intent, session, context):
                                 "Make sure you register a gateway from the EFR32 IoT Gateway Mobile Application".format(sessionAttributes['name'])
                                 
                 reprompt_text = "Are you sure you have a gateway registered? I couldn't find the details"
+            elif (r['statusCode'] == 501):
+                speech_output = "Sorry {0}, I couldn't find any sensor with that name associated with your account. " \
+                                "Make sure you register a sensor with the name: {1} from the EFR32 IoT Gateway Mobile Application".format(sessionAttributes['name'], sensorName)
+                                
+                reprompt_text = "Are you sure you have a sensor with that name registered? I couldn't find the details"
             else:
                 speech_output = "Sorry {0}, I don't have data of your {1} for the past 2 mins. " \
                                 "Please try again after sometime".format(sessionAttributes['name'], sensorName)
