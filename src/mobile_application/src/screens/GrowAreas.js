@@ -1449,8 +1449,8 @@ async deleteGatewayAPI(payload,device)
                         title="Rename Gateway"
                         subTitleStyle={{ color: 'white' }}
                         subtitle="Edit Gateway Name"
-                        placeholderInput= " "
-                        placeholderTextColor="white"
+                        placeholderInput={this.state.editedItem['gatewayName']}
+                        placeholderTextColor="Black"
                         textInputStyle={{ borderColor: 'white',color: 'black', borderWidth: 2,fontStyle: 'bold',fontSize : RFPercentage(2)  }}
                         secureTextEntry={false}
                         buttonsStyle={{ borderColor: 'white' }}
