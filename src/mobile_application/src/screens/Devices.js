@@ -1638,8 +1638,8 @@ async updateSensorName (value,device)
                          title="Rename Sensor"
                          subTitleStyle={{ color: 'white' }}
                          subtitle="Edit Sensor Name"
-                         placeholderInput= " "
-                         placeholderTextColor="white"
+                         placeholderInput= {this.state.editedSensor['device_name']}
+                         placeholderTextColor="Black"
                          textInputStyle={{ borderColor: 'white',color: 'black', borderWidth: 2,fontStyle: 'bold',fontSize : RFPercentage(2)  }}
                          secureTextEntry={false}
                          buttonsStyle={{ borderColor: 'white' }}

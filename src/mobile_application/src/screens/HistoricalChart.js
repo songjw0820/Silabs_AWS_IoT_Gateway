@@ -90,7 +90,7 @@ class HistoricalChart extends Component {
     //making a view to show to while loading the webpage
     return (
       <View style={styles.activityIndicator}>
-        <ActivityIndicator size="large" color={Constant.PRIMARY_COLOR} /><Text style={{ margin: 4, fontWeight: "bold" }}>Data Loading...</Text>
+        <ActivityIndicator size="large" color={Constant.RED_COLOR} /><Text style={{ margin: 4, fontWeight: "bold" }}>Data Loading...</Text>
       </View>
     );
   }
