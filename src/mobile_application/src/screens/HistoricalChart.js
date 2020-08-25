@@ -6,10 +6,19 @@ import * as Urls from '../Urls';
 import * as Constant from '../Constant';
 import { Navigation } from "react-native-navigation";
 import { WebView } from 'react-native-webview';
+import Amplify, { PubSub } from 'aws-amplify';
+import { AWSIoTProvider } from '@aws-amplify/pubsub/lib/Providers';
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 import _ from 'lodash';
 import Swiper from "react-native-custom-swiper";
 const {width,height} = Dimensions.get('window');
+
+Amplify.addPluggable(new AWSIoTProvider(
+  {
+    aws_pubsub_region: 'us-east-1',
+    aws_pubsub_endpoint: 'wss://a33lat393vkqq0-ats.iot.us-east-1.amazonaws.com/mqtt',
+}));
+
 
 class HistoricalChart extends Component {
 
@@ -18,6 +27,14 @@ class HistoricalChart extends Component {
       ...Constant.DEFAULT_NAVIGATOR_STYLE
     };
   }
+  subscription='';
+  currentGateway='';
+  property ={
+              "PIR":Constant.INITIAL_MSG,
+              "CO2":Constant.INITIAL_MSG,
+              "humidity":Constant.INITIAL_MSG,
+              "temperature":Constant.INITIAL_MSG,
+            };
   constructor(props) {
     super(props);
     Navigation.events().bindComponent(this);
@@ -30,6 +47,7 @@ class HistoricalChart extends Component {
       lowAlertValue: 0,
       highAlertValue: 0,
       data: [],
+      sensorLive:{},
       thresholdValues: {}
     };
     this.lowalertClickedValue = _.debounce(this.lowalertClickedValue, 2000);
@@ -42,15 +60,30 @@ class HistoricalChart extends Component {
       let sensors = JSON.parse(response[1][1]);
       if (sensors.length !== 0) {
         let thresholdValues = sensors[0]['thresholdValues']
+        this.currentGateway=sensors[0]['gatewayId']
         this.setState({ thresholdValues: thresholdValues })
         this.setState({ lowAlertValue: thresholdValues['lowTemp'] })
         this.setState({ highAlertValue: thresholdValues['highTemp'] })
+        let sensorLive = {};
+        sensors.map((item) => {
+          sensorLive[item['sensorId']]=this.property
+        })
+        this.setState({sensorLive});
+        console.log("final object---"+JSON.stringify(sensorLive));
+        setTimeout(() => {
+          this.connectAWSIOT();
+        }, 1000);
       }
       this.setState({ token, sensors }, () => {
       });
     }).catch((e) => {
       console.log('error in geting asyncStorage\'s item:', e.message);
     })
+    
+  }
+
+  componentDidDisappear() {
+    this.subscription.unsubscribe();
   }
 
   ActivityIndicatorLoadingView() {
@@ -62,6 +95,65 @@ class HistoricalChart extends Component {
     );
   }
 
+  connectAWSIOT()
+  {
+    const topic='gateway/'+this.currentGateway+'/telemetry';
+    console.log("topic----"+topic);
+    this.subscription= PubSub.subscribe(topic ,{ provider: 'AWSIoTProvider' }).subscribe({
+      next: data => this.telemetryProcessing(data['value']),
+      error: error => console.error(error),
+      close: () => console.log('Done'),
+    });
+  }
+
+  telemetryProcessing(data)
+  {
+    let sensorsLive = {...this.state.sensorLive}
+    console.log("Telemetry---"+JSON.stringify(data));
+    if(data['sensorId'] in sensorsLive )
+    {
+      if("temperature" in data)
+      {
+        if(sensorsLive[data['sensorId']]['temperature']!= data['temperature'])
+        {
+         let newObj;
+         newObj={...sensorsLive[data['sensorId']],temperature:data['temperature'] }
+         sensorsLive[data['sensorId']]=newObj
+         this.setState({sensorLive:sensorsLive});
+        }
+      }else if ("humidity" in data)
+      {
+        if(sensorsLive[data['sensorId']]['humidity']!= data['humidity'])
+        {
+          let newObj;
+          newObj={...sensorsLive[data['sensorId']],humidity:data['humidity'] }
+          sensorsLive[data['sensorId']]=newObj
+          this.setState({sensorLive:sensorsLive});
+          console.log("humidity state updated");
+        }
+      }else if ("CO2" in data)
+      {
+        if(sensorsLive[data['sensorId']]['CO2']!= data['CO2'])
+        {
+          let newObj;
+          newObj={...sensorsLive[data['sensorId']],CO2:data['CO2'] }
+          sensorsLive[data['sensorId']]=newObj
+          this.setState({sensorLive:sensorsLive});
+          console.log("CO2 state updated");
+        }
+      }else if ("PIR" in data)
+      {
+        if(sensorsLive[data['sensorId']]['PIR']!= data['PIR'])
+        {
+          let newObj;
+          newObj={...sensorsLive[data['sensorId']],PIR:data['PIR'] }
+          sensorsLive[data['sensorId']]=newObj
+          this.setState({sensorLive:sensorsLive});
+          console.log("PIR state updated");
+        }
+      }
+    }
+  }
 
   showData() {
     var propertyName = Constant.propertyList[this.state.currentPropertyIndex];
@@ -320,6 +412,7 @@ class HistoricalChart extends Component {
   }
 
   render() {
+   
     let devicesList;
     let alertList;
     let unit;
@@ -327,6 +420,7 @@ class HistoricalChart extends Component {
     let propertyNextArrow;
     let sensorBackArrow;
     let sensorNextArrow;
+    let livedata;
     if (Constant.propertyList[this.state.currentPropertyIndex] == Constant.TEMPERATURE) {
       unit = (<TouchableOpacity><Text style={{ color: "black", fontSize: RFPercentage(5.5), fontWeight: "bold" }}>F</Text></TouchableOpacity>);
     }
@@ -399,6 +493,15 @@ class HistoricalChart extends Component {
       );
     }
     if (this.state.sensors.length !== 0) {
+      if((this.state.sensorLive[this.state.sensors[this.state.sensorCurrentIndex]['sensorId']][Constant.propertyList[this.state.currentPropertyIndex]]!= Constant.INITIAL_MSG) &&(Constant.propertyList[this.state.currentPropertyIndex]==Constant.TEMPERATURE))
+      {
+        livedata = unit = (<Text style={{ color: "black", fontSize: RFPercentage(2.5), fontWeight: "bold" }}>F</Text>);
+      }else if((this.state.sensorLive[this.state.sensors[this.state.sensorCurrentIndex]['sensorId']][Constant.propertyList[this.state.currentPropertyIndex]]!= Constant.INITIAL_MSG) &&(Constant.propertyList[this.state.currentPropertyIndex]==Constant.HUMIDITY))
+      {
+        livedata = unit = (<Text style={{ color: "black", fontSize: RFPercentage(2.5), fontWeight: "bold" }}>%</Text>);
+      }
+    }
+    if (this.state.sensors.length !== 0) {
       devicesList = (
         <ScrollView contentContainerStyle={styles.inputContainer}>
           <View style={{ marginVertical: height * 0.05 }}>
@@ -413,7 +516,13 @@ class HistoricalChart extends Component {
                {propertyNextArrow}
             </View>
             <View style={{ marginVertical: height * 0.01 }}>
-              <Text style={{ fontSize: RFPercentage(2.5), color: "black", alignSelf: 'center' }}>{this.state.sensors[this.state.sensorCurrentIndex]['device_name']} : {Constant.propertyList[this.state.currentPropertyIndex]}</Text>
+              <View style={{flexDirection:'row',alignItems:'center',alignSelf:'center',alignContent:'center'}}>
+                <View>
+                <Text style={{ fontSize: RFPercentage(2.5),fontWeight: "bold",color: "black"}}>Current value : {this.state.sensorLive[this.state.sensors[this.state.sensorCurrentIndex]['sensorId']][Constant.propertyList[this.state.currentPropertyIndex]]}</Text>
+                </View>
+                <View style={{marginHorizontal: width * 0.02}}>{livedata}</View>
+              </View>
+              
               <View style={{ flexDirection: 'column', width: (width * 0.95), height: (height * 0.33), marginVertical: height * 0.01 }}>
                 {this.showData()}
               </View>

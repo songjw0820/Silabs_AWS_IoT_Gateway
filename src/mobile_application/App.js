@@ -3,7 +3,6 @@ import GrowAreasScreen from './src/screens/GrowAreas';
 import DevicesScreen from './src/screens/Devices';
 import LoginScreen from './src/screens/Login';
 import SideDrawer from './src/screens/SideDrawer';
-import PublishScreen from './src/screens/PublishData';
 import SettingsScreen from './src/screens/Settings';
 import HistoricalChart from './src/screens/HistoricalChart';
 import { AsyncStorage, Alert } from 'react-native';
