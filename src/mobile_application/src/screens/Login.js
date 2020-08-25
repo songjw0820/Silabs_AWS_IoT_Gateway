@@ -1,5 +1,5 @@
 import React from "react"
-import { StyleSheet,Dimensions, Text, View,Button,AsyncStorage } from "react-native"
+import { StyleSheet,Dimensions, Text, View,Button,AsyncStorage,ActivityIndicator } from "react-native"
 import Amplify from '@aws-amplify/core';
 import Auth from '@aws-amplify/auth';
 import config from "../../aws-exports"
@@ -168,9 +168,17 @@ async componentDidMount() {
       }
    }
 
+   ActivityIndicatorLoadingView() {
+    return (
+      <View style={styles.activityIndicator}>
+        <ActivityIndicator size="large" color={Constant.RED_COLOR} /><Text style={{ margin: 4, fontWeight: "bold" }}>Loading...</Text>
+      </View>
+    );
+  }
+
    render() {
      if (this.state.isLoading) {
-       return <View style={[styles.container,{color:'red'}]}><Text></Text></View>;
+      return this.ActivityIndicatorLoadingView();
      }
      // this is the content you want to show after the promise has resolved
      return <View/>;
@@ -183,7 +191,12 @@ const styles = StyleSheet.create({
 		backgroundColor: Constant.LIGHT_GREY_COLOR,
 		alignItems: "center",
 		justifyContent: "center"
-	}
+  } ,
+  activityIndicator: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
+  }
 })
 
 // New ----
